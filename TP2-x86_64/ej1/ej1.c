@@ -18,15 +18,15 @@ string_proc_node* string_proc_node_create(uint8_t type, char* hash) {
         return NULL;
     }
     node->type = type;
-    node->hash = hash
+    node->hash = hash;
     node->next = NULL;
     node->previous = NULL;
     return node;
 }
 
-void string_proc_list_add_node(string_proc_list* list, uint8_t type, char* hash){
+void string_proc_list_add_node(string_proc_list* list, uint8_t type, char* hash) {
 	if (list == NULL) {
-		return NULL
+		return NULL;
 	}
 
 	string_proc_node* node = string_proc_node_create(type, hash);
