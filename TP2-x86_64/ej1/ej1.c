@@ -1,4 +1,5 @@
 #include "ej1.h"
+#include <string.h>
 
 string_proc_list* string_proc_list_create(void){
 	string_proc_list* list = (string_proc_list*)malloc(sizeof(string_proc_list));
@@ -14,56 +15,61 @@ string_proc_list* string_proc_list_create(void){
 string_proc_node* string_proc_node_create(uint8_t type, char* hash) {
     string_proc_node* node = (string_proc_node*)malloc(sizeof(string_proc_node));
     if (node == NULL) {
-        fprintf(stderr, "Error: No se pudo crear el nodo\n");
         return NULL;
     }
     node->type = type;
-    node->hash = strdup(hash); // Duplicate the hash string
-    if (node->hash == NULL) {
-        fprintf(stderr, "Error: No se pudo duplicar el hash\n");
-        free(node);
-        return NULL;
-    }
+    node->hash = hash
     node->next = NULL;
     node->previous = NULL;
     return node;
 }
 
 void string_proc_list_add_node(string_proc_list* list, uint8_t type, char* hash){
+	if (list == NULL) {
+		return NULL
+	}
+
 	string_proc_node* node = string_proc_node_create(type, hash);
 	if(node == NULL){
-		fprintf(stderr, "Error: No se pudo crear el nodo\n");
-		return;
+		return NULL;
 	}
+
 	if(list->first == NULL){
 		list->first = node;
 		list->last  = node;
-	}else{
-		list->last->next = node;
+	} else {
 		node->previous   = list->last;
+		list->last->next = node;
 		list->last      = node;
 	}
 }
 
 char* string_proc_list_concat(string_proc_list* list, uint8_t type , char* hash){
-	string_proc_node* node = string_proc_node_create(type, hash);
-	if(node == NULL){
-		fprintf(stderr, "Error: No se pudo crear el nodo\n");
+	if (list == NULL) {
+		return NULL
+	}
+
+	char* result = malloc(strlen(hash) + 1);
+	if (result == NULL) {
 		return NULL;
 	}
-	if(list->first == NULL){
-		list->first = node;
-		list->last  = node;
-	}else{
-		list->last->next = node;
-		node->previous   = list->last;
-		list->last      = node;
+	strcpy(result, hash);
+
+	string_proc_node* current = list->first;
+	while (current != NULL) {
+		if (current->type == type && current->hash != NULL) {
+			char* new_result = str_concat(result, current->hash);
+			free(result);
+			if (new_result == NULL) {
+				return NULL;
+			}
+			result = new_result;
+		}
+		current = current->next;
 	}
-	char* result = str_concat(list->first->hash, list->last->hash);
 	return result;
 }
-
-
+		
 /** AUX FUNCTIONS **/
 
 void string_proc_list_destroy(string_proc_list* list){
