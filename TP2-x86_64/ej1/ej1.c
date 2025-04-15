@@ -4,7 +4,6 @@
 string_proc_list* string_proc_list_create(void){
 	string_proc_list* list = (string_proc_list*)malloc(sizeof(string_proc_list));
 	if(list == NULL){
-		fprintf(stderr, "Error: No se pudo crear la lista\n");
 		return NULL;
 	}
 	list->first = NULL;
@@ -30,22 +29,22 @@ void string_proc_list_add_node(string_proc_list* list, uint8_t type, char* hash)
 	}
 
 	string_proc_node* node = string_proc_node_create(type, hash);
-	if(node == NULL){
+	if (node == NULL) {
 		return;
 	}
 
-	if(list->first == NULL){
+	if (list->first == NULL) {
 		list->first = node;
 		list->last  = node;
 	} else {
-		node->previous   = list->last;
+		node->previous = list->last;
 		list->last->next = node;
-		list->last      = node;
+		list->last = node;
 	}
 }
 
 char* string_proc_list_concat(string_proc_list* list, uint8_t type , char* hash){
-	if (list == NULL) {
+	if (list == NULL || hash == NULL) {
 		return NULL;
 	}
 
@@ -69,7 +68,7 @@ char* string_proc_list_concat(string_proc_list* list, uint8_t type , char* hash)
 	}
 	return result;
 }
-		
+
 /** AUX FUNCTIONS **/
 
 void string_proc_list_destroy(string_proc_list* list){
