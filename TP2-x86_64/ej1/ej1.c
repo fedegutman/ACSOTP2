@@ -3,7 +3,7 @@
 
 string_proc_list* string_proc_list_create(void){
 	string_proc_list* list = (string_proc_list*)malloc(sizeof(string_proc_list));
-	if(list == NULL){
+	if (list == NULL) {
 		return NULL;
 	}
 	list->first = NULL;
@@ -24,7 +24,7 @@ string_proc_node* string_proc_node_create(uint8_t type, char* hash) {
 }
 
 void string_proc_list_add_node(string_proc_list* list, uint8_t type, char* hash) {
-	if (list == NULL) {
+	if (list == NULL || hash == NULL) {
 		return;
 	}
 
@@ -69,7 +69,6 @@ char* string_proc_list_concat(string_proc_list* list, uint8_t type , char* hash)
 	return result;
 }
 
-
 /** AUX FUNCTIONS **/
 
 void string_proc_list_destroy(string_proc_list* list){
@@ -94,8 +93,6 @@ void string_proc_node_destroy(string_proc_node* node){
 	node->type      = 0;			
 	free(node);
 }
-
-
 char* str_concat(char* a, char* b) {
 	int len1 = strlen(a);
     int len2 = strlen(b);
@@ -105,7 +102,6 @@ char* str_concat(char* a, char* b) {
     strcat(result, b);
     return result;  
 }
-
 void string_proc_list_print(string_proc_list* list, FILE* file){
         uint32_t length = 0;
         string_proc_node* current_node  = list->first;
@@ -120,6 +116,3 @@ void string_proc_list_print(string_proc_list* list, FILE* file){
                 current_node = current_node->next;
         }
 }
-
-
-
