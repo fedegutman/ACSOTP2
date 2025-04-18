@@ -19,6 +19,21 @@ extern str_concat
 
 
 string_proc_list_create_asm:
+    push rbp
+    mov rbp, rsp ; puntero de la pil;a
+
+    mov edi, 16 ; bytes necesarios para malloc
+    call malloc ;
+
+    test rax, rax
+    je .return_null ; if rax == NULL (malloc falló) return null
+
+    mov qword [rax], 0 ; *(rax) = 0 (first = NULL)
+    mov qword [rax + 8], 0 ; *(rax + 8) = 0 (last = NULL)
+
+.return_null:
+    pop rbp
+    ret
 
 string_proc_node_create_asm:
 

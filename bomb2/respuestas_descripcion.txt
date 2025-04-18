@@ -1,6 +1,13 @@
 FASE 1: Cada uno es como Dios le hizo, y aun peor muchas veces.
 
+En fase 1 hay una función <strings_not_equal> la cual compara 2 strings, el input y uno que esta guardado en un registro. Si estos no son iguales, el programa llama a <explode_bomb>. x/s 0x4c9a58
 
+
+
+
+
+
+<strings_not_equal> - This function name suggests that it is going to compare two strings. If strings are not equal, this program is calling <explode_bomb>
 
 
 FASE 2: 1 -3 -2

@@ -49,7 +49,7 @@ char* string_proc_list_concat(string_proc_list* list, uint8_t type , char* hash)
 		return NULL;
 	}
 
-	char* result = malloc(strlen(hash) + 1);
+	char* result = malloc(strlen(hash) + 1); // +1 para el \0
 	if (result == NULL) {
 		return NULL;
 	}
