@@ -31,7 +31,7 @@ string_proc_list_create_asm:
     mov qword [rax], NULL
     mov qword [rax + 8], NULL
 
-    mov rsp
+    mov rsp, rbp
     pop rbp
     ret
 
