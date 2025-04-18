@@ -25,17 +25,36 @@ string_proc_list_create_asm:
     mov edi, 16 ; bytes necesarios para malloc
     call malloc ;
 
-    test rax, rax
-    je .return_null ; if rax == NULL (malloc falló) return null
+    cmp rax, NULL
+    je .return_null ; if rax == NULL (malloc falla) return null
 
-    mov qword [rax], 0 ; *(rax) = 0 (first = NULL)
-    mov qword [rax + 8], 0 ; *(rax + 8) = 0 (last = NULL)
+    ; inicializo la lista (first y last)
+    mov qword [rax], NULL
+    mov qword [rax + 8], null
 
 .return_null:
     pop rbp
     ret
 
 string_proc_node_create_asm:
+    push rbp
+    mov rbp, rsp
+
+    mov edi, 32 ; tamaño del nodo
+    call malloc
+
+    cmp rax, NULL
+    je .return_null
+
+    ; inicializo el nodo
+    mov qword [rax], NULL ; next = NULL
+    mov qword [rax + 8], NULL ; previous = NULL
+    mov byte [rax + 16], 0 ; type = 0
+    mov qword [rax + 24], NULL ; hash = NULL
+
+.return_null:
+    pop rbp
+    ret
 
 string_proc_list_add_node_asm:
 
