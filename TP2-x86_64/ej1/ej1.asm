@@ -17,228 +17,211 @@ extern malloc
 extern free
 extern str_concat
 
-; -----------------------------------------------
-; string_proc_list_create_asm:
-; Crea una nueva lista de procesamiento de cadenas.
-; - Reserva 16 bytes en memoria usando malloc.
-; - Inicializa los punteros `first` y `last` a NULL (0).
-; Retorna:
-; - La dirección del bloque de memoria si se asignó correctamente.
-; - NULL (0) si la asignación falla.
-; -----------------------------------------------
 string_proc_list_create_asm:
+
+    push rbp
+    mov rbp, rsp ; puntero de la pila
+
+    mov rdi, 16 ; bytes necesarios para malloc
+    call malloc
+
+    cmp rax, NULL
+    je .return_null ; if rax == NULL (malloc falla) return null
+
+    ; inicializo la lista (first y last)
+    mov qword [rax], NULL
+    mov qword [rax + 8], NULL
+
+    pop rbp
+    ret
+
+.return_null:
+    xor rax, rax     ; hago xor consigo mismo para limpiarlo
+    pop rbp
+    ret
+
+string_proc_node_create_asm:
     push rbp
     mov rbp, rsp
 
-    mov rdi, 16
+    mov edi, 32 ; tamaño del nodo
     call malloc
 
-    test rax, rax
+    cmp rax, NULL
     je .return_null
 
-    mov qword [rax], 0
-    mov qword [rax + 8], 0
+    ; inicializo el nodo
+    mov qword [rax], NULL ; next = NULL
+    mov qword [rax + 8], NULL ; previous = NULL
+    mov byte [rax + 16], dil ; type = valor d dil
+    mov qword [rax + 24], NULL ; hash = NULL
 
+    mov rsp, rbp
     pop rbp
     ret
 
 .return_null:
-    xor rax, rax     ; rax = 0 (NULL)
+    mov rax, NULL
+    mov rsp, rbp
     pop rbp
     ret
 
-
-; ----------------------------------------------------------
-; string_proc_node_create_asm:
-; Crea un nuevo nodo para una lista de procesamiento de cadenas.
-; - Reserva 32 bytes de memoria para el nodo usando malloc.
-; - Inicializa los campos:
-;   - `next` y `previous` en NULL (0).
-;   - `type` con el valor de `dil` (el tipo proporcionado).
-;   - `hash` con el valor de `rsi` (el hash proporcionado).
-; Retorna:
-; - La dirección del nodo creado si la asignación es exitosa.
-; - NULL (0) si malloc falla.
-; ----------------------------------------------------------
-string_proc_node_create_asm:
-    push rdi
-    push rsi
-
-    mov rdi, 32
-    call malloc
-
-    pop rsi
-    pop rdi
-    test rax, rax
-    je .return_null
-
-    mov qword [rax], 0         ; next
-    mov qword [rax + 8], 0     ; previous
-    mov byte [rax + 16], dil   ; type
-    mov qword [rax + 24], rsi  ; hash
-
-    ret
-
-.return_null:
-    xor rax, rax
-    ret
-
-
-; ----------------------------------------------------------
-; string_proc_list_add_node_asm:
-; Agrega un nuevo nodo al final de una lista doblemente enlazada.
-; - Argumentos:
-;   - `rdi`: Puntero a la lista (`list`).
-;   - `sil`: Tipo del nodo (`type`).
-;   - `rdx`: Puntero al hash del nodo (`hash`).
-; - Retorno:
-;   - Si `list` es NULL, no se realiza ninguna operación.
-;   - Si la creación del nodo falla, no se realizan cambios en la lista.
-;   - Si el nodo se crea correctamente, se actualiza la lista.
-; ----------------------------------------------------------
 string_proc_list_add_node_asm:
     push rbp
     mov rbp, rsp
     push rbx
     push r12
 
-    mov rbx, rdi        ; list
+    mov rbx, rdi
     test rbx, rbx
-    jz .end             ; si list == NULL, salir
+    jz .return_null
 
     movzx r12, sil
-    mov rsi, rdx        ; hash
-
-    movzx edi, r12b
+    mov rsi, rdx
+    
     call string_proc_node_create_asm
-    test rax, rax
-    jz .end
+    cmp rax, NULL
+    je .return_null
 
-    cmp qword [rbx], 0
+    cmp qword [rbx], NULL
     jne .not_empty
 
-    mov [rbx], rax      ; list->first = node
-    mov [rbx + 8], rax  ; list->last = node
+    mov [rbx], rax
+    mov [rbx + 8], rax
     jmp .end
 
 .not_empty:
-    mov rcx, [rbx + 8]  ; rcx = list->last
-    mov [rax + 8], rcx  ; node->prev = last
-    mov [rcx], rax      ; last->next = node
-    mov [rbx + 8], rax  ; list->last = node
+    mov rcx, [rbx + 8] ; rcx = list->last
+    mov [rax + 8], rcx ; new_node->previous = list->last
+    mov [rcx], rax ; list->last->next = new_node
+    mov [rbx + 8], rax ; list->last = rax (new node)
 
 .end:
     pop r12
     pop rbx
+    mov rsp, rbp
     pop rbp
     ret
 
+.return_null:
+    xor rax, rax
+    jmp .end
 
-; ----------------------------------------------------------
-; string_proc_list_concat_asm:
-; Genera un nuevo hash concatenando el hash inicial con los hashes
-; de los nodos de la lista que coincidan con el tipo especificado.
-; - Argumentos:
-;   - `rdi`: Puntero a la lista (`list`).
-;   - `sil`: Tipo de nodos a considerar para la concatenación (`type`).
-;   - `rdx`: Puntero al hash inicial (`hash`).
-; - Retorno:
-;   - Si `list` es NULL o `hash` es NULL, devuelve NULL.
-;   - Si ocurre un error de memoria, devuelve NULL.
-;   - En caso de éxito, devuelve un puntero al nuevo hash concatenado
-;     (el cual debe liberarse con `free`).
-; ----------------------------------------------------------
+
 string_proc_list_concat_asm:
     push rbp
     mov rbp, rsp
-    sub rsp, 16
     push rbx
     push r12
     push r13
     push r14
     push r15
 
-    mov rbx, rdi        ; list
-    movzx r12, sil      ; type
-    mov r13, rdx        ; hash
+    ; rdi = pointer to the list
+    ; rsi = type
+    ; rdx = pointer to hash
 
-    ; Chequear si list o hash son NULL
-    test rbx, rbx
+    ; Check for NULL list or NULL hash
+    test rdi, rdi              ; check if list is NULL
     jz .return_null
-    test r13, r13
+    test rdx, rdx              ; check if hash is NULL
     jz .return_null
 
-    ; Calcular la longitud de la cadena hash (strlen) y asignar memoria
-    xor rax, rax        ; rax = contador
-.len_loop:
-    cmp byte [r13 + rax], 0
-    je .len_done
-    inc rax
-    jmp .len_loop
-.len_done:
-    inc rax             ; Incluir terminador nulo
-    mov rdi, rax
-    call malloc
-    test rax, rax
-    jz .error
+    ; Allocate memory for the result string (strlen(hash) + 1)
+    ; rdx = pointer to hash (input string)
+    call strlen_asm            ; call strlen to get the length of the hash
+    mov rdi, rax               ; rdi = length of the hash (rax from strlen)
+    inc rdi                    ; +1 for null terminator
+    call malloc                ; allocate memory for result
 
-    ; Copiar hash al buffer resultante
-    mov r14, rax        ; r14 = result
-    mov rsi, r13        ; source = hash
-    mov rdi, r14        ; destination = result
-.copy_loop:
-    mov cl, [rsi]
-    mov [rdi], cl
-    test cl, cl
-    jz .copy_done
-    inc rsi
-    inc rdi
-    jmp .copy_loop
-.copy_done:
-    mov r15, [rbx]      ; current_node = list->first
+    test rax, rax              ; check if malloc failed
+    jz .return_null
 
-.loop:
-    test r15, r15
-    jz .success
+    ; Copy hash into result string
+    mov rdi, rax               ; rdi = pointer to result
+    mov rsi, rdx               ; rsi = pointer to hash
+    call strcpy_asm            ; copy hash to result
 
-    movzx eax, byte [r15 + 16]  ; current_node->type
-    cmp al, r12b
-    jne .next
+    ; Iterate through the list and concatenate matching nodes
+    mov rbx, [rdi]             ; rbx = list->first (start with first node)
+    test rbx, rbx              ; check if list is empty
+    jz .end_concat
 
-    mov rdi, r14
-    mov rsi, [r15 + 24] ; current_node->hash
-    call str_concat
-    test rax, rax
-    jz .error
+    ; Loop through each node in the list
+    .loop:
+        ; Check if node type matches
+        movzx r12, byte [rbx + 16]  ; r12 = current node->type
+        cmp r12, rsi                ; compare with the passed type
+        jne .next_node
 
-    mov rdi, r14
-    mov r14, rax
-    call free
+        ; Check if node hash is not NULL
+        mov r13, [rbx + 24]         ; r13 = current node->hash
+        test r13, r13               ; check if hash is NULL
+        jz .next_node
 
-.next:
-    mov r15, [r15]      ; current_node = current_node->next
-    jmp .loop
+        ; Concatenate current node's hash to result
+        mov rdi, rax                ; rdi = result (current string)
+        mov rsi, r13                ; rsi = current node->hash
+        call str_concat_asm         ; concatenate result with node hash
+        test rax, rax               ; check if str_concat failed
+        jz .return_null
+        mov rax, rdi                ; update result with the new concatenated string
 
-.success:
-    mov rax, r14
-    jmp .cleanup
+        .next_node:
+        mov rbx, [rbx]              ; move to the next node
+        test rbx, rbx               ; check if we reached the end
+        jnz .loop
 
-.error:
-    mov rdi, r14
-    call free
-    xor rax, rax
-    jmp .cleanup
+    .end_concat:
+        ; Return result
+        pop r15
+        pop r14
+        pop r13
+        pop r12
+        pop rbx
+        mov rsp, rbp
+        pop rbp
+        ret
 
 .return_null:
-    xor rax, rax
-    jmp .cleanup
-
-.cleanup:
+    xor rax, rax                ; return NULL (rax = 0)
     pop r15
     pop r14
     pop r13
     pop r12
     pop rbx
-    add rsp, 16
+    mov rsp, rbp
     pop rbp
     ret
+
+strlen_asm:
+    ; rdi = pointer to the string
+    xor rax, rax            ; clear rax (to store the length)
+    
+.strlen_loop:
+    mov al, byte [rdi]      ; load the current byte of the string into al
+    test al, al             ; check if it's the null-terminator (0)
+    jz .done                ; if it is null, we are done
+    inc rdi                 ; move to the next byte
+    inc rax                 ; increment the length
+    jmp .strlen_loop        ; repeat the loop
+
+.done:
+    ret
+
+strcpy_asm:
+    ; rdi = destination pointer
+    ; rsi = source pointer
+    
+    .strcpy_loop:
+        mov al, byte [rsi]  ; load the current byte from the source string
+        mov byte [rdi], al   ; store it in the destination string
+        test al, al          ; check if it's the null-terminator (0)
+        jz .done             ; if it is null, we're done
+        inc rdi              ; move to the next byte in the destination
+        inc rsi              ; move to the next byte in the source
+        jmp .strcpy_loop     ; repeat the loop
+
+    .done:
+        ret
+
