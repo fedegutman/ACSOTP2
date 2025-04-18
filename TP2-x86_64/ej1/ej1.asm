@@ -19,31 +19,26 @@ extern free
 extern str_concat
 
 string_proc_list_create_asm:
-
-    push rbp
-    mov rbp, rsp ; puntero de la pila
-
     mov rdi, 16 ; bytes necesarios para malloc
     call malloc
-
     cmp rax, NULL
-    je .return_null ; if rax == NULL (malloc falla) return null
+    je .return ; if rax == NULL (malloc falla) return null
 
     ; inicializo la lista
     mov qword [rax], NULL ; first
     mov qword [rax + 8], NULL ; last
 
-    pop rbp
     ret
 
 .return_null:
     xor rax, rax     ; hago xor consigo mismo para limpiarlo
-    pop rbp
     ret
 
 string_proc_node_create_asm:
     push rbx
     push r12
+
+    mov bl, dil
     mov r12, rsi
 
     mov edi, 32 ; tamaño del nodo
@@ -54,7 +49,7 @@ string_proc_node_create_asm:
     ; inicializo el nodo
     mov qword [rax], NULL ; next = NULL
     mov qword [rax + 8], NULL ; previous = NULL
-    mov byte [rax + 16], dil ; type = valor d dil
+    mov byte [rax + 16], bl ; type = valor d dil
     mov qword [rax + 24], r12 ; hash = puntero
 
     pop r12
