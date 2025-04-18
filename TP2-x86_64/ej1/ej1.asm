@@ -50,7 +50,7 @@ string_proc_node_create_asm:
     mov rdi, 32 ; tamaño del nodo
     call malloc
 
-    test rdi, rdi
+    test rax, rax
     jz .return
 
     ; inicializo el nodo
@@ -99,11 +99,11 @@ string_proc_list_add_node_asm:
     mov [r14 + 8], rcx
     mov [rcx], r14
     mov [rbx + 8], r14
+    jmp .return ; ver de sacarlo
 
 .empty_list
     mov [rbx], r14
     mov [rbx + 8], r14
-    jmp .return ; ver de sacarlo
 
 .return
     pop r14
@@ -129,15 +129,14 @@ string_proc_list_concat_asm:
     mov rdi, r13
     call strdup
     mov r14, rax ; result
-    cmp r14, NULL
-    je .return
+    test r14, r14
+    jz .return
     
-    ; while
     mov r15, [rbx] ; current
 
 .loop:
-    cmp r15, NULL
-    je .return
+    test r14, r14
+    jz .return
 
     ; verificar tipo
     movzx eax, byte [r15+16] ; type
@@ -148,8 +147,8 @@ string_proc_list_concat_asm:
     mov rdi, r14 ; resultado actual
     mov rsi, [r15+24]; hash
     call str_concat
-    cmp rax, NULL
-    je .concat_error
+    test rax, rax
+    jz .concat_error
     
     ; libero el string anterior
     mov rdi, r14
