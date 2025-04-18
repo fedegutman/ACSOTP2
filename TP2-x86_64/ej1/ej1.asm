@@ -81,6 +81,10 @@ string_proc_list_add_node_asm:
     mov [rbx], rax ; first
     mov [rbx + 8], rax ; last
 
+.return:
+    pop rbp
+    ret
+    
 .return_null:
     pop rbp
     ret      
