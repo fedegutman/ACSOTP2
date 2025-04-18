@@ -18,7 +18,6 @@ extern free
 extern str_concat
 extern strdup
 
-
 string_proc_list_create_asm:
     ; inicializo la pila
     push rbp
@@ -27,8 +26,8 @@ string_proc_list_create_asm:
     mov rdi, 16 ; tamaño de la lista
     call malloc
 
-    cmp rax, NULL ; si malloc falla -> return
-    je .return
+    test rax, rax ; si malloc falla -> return
+    jz .return
     
     ; inicializo la lista vaica
     mov qword [rax], NULL ; first = NULL
@@ -51,8 +50,8 @@ string_proc_node_create_asm:
     mov rdi, 32 ; tamaño del nodo
     call malloc
 
-    cmp rdi, NULL
-    je .return
+    test rdi, rdi
+    jz .return
 
     ; inicializo el nodo
     mov qword [rax], NULL ; next
@@ -84,8 +83,8 @@ string_proc_list_add_node_asm:
     mov rsi, r13
     call string_proc_node_create_asm
 
-    cmp rax, NULL
-    je .return
+    test rax, rax
+    jz .return
 
     mov r14, rax ; guardo el nuevo nodo
     
