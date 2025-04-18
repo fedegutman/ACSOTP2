@@ -78,18 +78,19 @@ string_proc_list_add_node_asm:
     je .return  
 
     mov r9, rax
-    mov rcx, [r12 + 8]
-    cmp rcx, NULL
-    jne .not_empty
 
-    mov [r12], r9
-    mov [r12 + 8], r9
-    
-.not_empty:
-    mov [rcx], r9
+    mov rcx, [r12 + 8]
+    test rcx, rcx
+    je .empty_list
+
+    mov [rcx + 0], r9
     mov [r9 + 8], rcx
     mov [r12 + 8], r9
-    jmp .return
+    jmp .fin_add
+
+.empty_list:
+    mov [r12 + 0], r9
+    mov [r12 + 8], r9
 
 .return:
     pop r12
