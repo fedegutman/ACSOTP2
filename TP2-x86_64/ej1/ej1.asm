@@ -162,7 +162,7 @@ string_proc_list_concat_asm:
         ; Concatenate current node's hash to result
         mov rdi, rax                ; rdi = result (current string)
         mov rsi, r13                ; rsi = current node->hash
-        call str_concat_asm         ; concatenate result with node hash
+        call str_concat         ; concatenate result with node hash
         test rax, rax               ; check if str_concat failed
         jz .return_null
         mov rax, rdi                ; update result with the new concatenated string
