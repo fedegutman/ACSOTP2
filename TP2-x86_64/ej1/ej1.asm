@@ -30,7 +30,7 @@ string_proc_list_create_asm:
 
     ; inicializo la lista (first y last)
     mov qword [rax], NULL
-    mov qword [rax + 8], null
+    mov qword [rax + 8], NULL
 
 .return_null:
     pop rbp
