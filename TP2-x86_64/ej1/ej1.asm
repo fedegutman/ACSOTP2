@@ -60,6 +60,9 @@ string_proc_list_add_node_asm:
     push rbp
     mov rbp, rsp
 
+    test rdi, rdi        ; Check if the list pointer is NULL
+    je .return_null
+
     call string_proc_node_create_asm
     test rax, rax ; chequeo si el nodo se creo correctamente
     je .return_null
