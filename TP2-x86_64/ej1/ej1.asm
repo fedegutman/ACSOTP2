@@ -84,11 +84,68 @@ string_proc_list_add_node_asm:
 .return:
     pop rbp
     ret
-    
+
 .return_null:
     pop rbp
     ret      
 
-
 string_proc_list_concat_asm:
+    push rbp
+    mov rbp, rsp
+
+    test rdi, rdi
+    je .return_null
+    test rsi, rsi
+    je .return_null
+
+    mov rdi, rsi
+    call strlen
+    add rax, 1
+    mov rdi, rax
+    call malloc
+    test rax, rax
+    je .return_null
+    mov rbx, rax
+
+    mov rdi, rbx
+    mov rsi, rsi
+    call strcpy
+
+    mov rcx, [rdi]
+    
+.loop:
+    test rcx, rcx
+    je .done
+
+    movzx rdx, byte [rcx + 16]
+    cmp dl, sil
+    jne .next_node
+
+    mov rdi, [rcx + 24]
+    test rdi, rdi
+    je .next_node
+
+    mov rsi, rdi
+    mov rdi, rbx
+    call str_concat
+    test rax, rax
+    je .free_and_return_null
+    mov rbx, rax 
+
+.next_node:
+    mov rcx, [rcx]
+    jmp .loop
+
+.done:
+    mov rax, rbx
+    pop rbp
+    ret
+
+.free_and_return_null:
+    mov rdi, rbx
+    call free
+.return_null:
+    xor rax, rax
+    pop rbp
+    ret
 
