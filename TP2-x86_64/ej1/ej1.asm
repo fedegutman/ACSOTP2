@@ -113,56 +113,66 @@ string_proc_list_concat_asm:
     push rbp
     mov rbp, rsp
 
-    test rdi, rdi
+    ; Validate input parameters (list and hash)
+    test rdi, rdi        ; Check if list (rdi) is NULL
+    jz .return_null
+    test rsi, rsi        ; Check if hash (rsi) is NULL
     jz .return_null
 
-    test rsi, rsi
-    jz .return_null
-
-    mov rdx, rsi
+    ; Allocate memory for the initial result (strlen(hash) + 1)
+    mov rdx, rsi         ; Pass hash to strlen
     call strlen_asm
-    add rax, 1
-
-    mov edi, rax
-    call malloc
-    test rax, rax
+    add rax, 1           ; Add 1 for the null terminator
+    mov edi, rax         ; Pass size to malloc
+    call malloc          ; Allocate memory for result
+    test rax, rax        ; Check if malloc failed
     jz .return_null
+    mov rbx, rax         ; Save result pointer in rbx
 
-    mov rsi, rsi
-    mov rdi, rax
+    ; Copy hash into result
+    mov rdi, rbx         ; Destination (result)
+    mov rsi, rsi         ; Source (hash)
     call strcpy_asm
 
-    mov rbx, rdi
-    mov rdx, [rbx]
-    mov rcx, rax
-
+    ; Iterate through the list
+    mov rcx, [rdi]       ; rcx = list->first
+    
 .loop_start:
-    test rdx, rdx
+    test rcx, rcx        ; Check if current node is NULL
     jz .end_concat
 
-    movzx r8b, byte [rdx + 16]
-    cmp r8b, dil
-    jne .next_node
+    ; Check if current->type == type
+    movzx r8b, byte [rcx + 16] ; Load current->type into r8b
+    cmp r8b, dil          ; Compare type (r8b) with input type (dil)
+    jne .next_node        ; Skip if types do not match
 
-    mov r8, [rdx + 24]
-    test r8, r8        
-    jz .next_node
+    ; Check if current->hash != NULL
+    mov r8, [rcx + 24]    ; Load current->hash into r8
+    test r8, r8           ; Check if hash is NULL
+    jz .next_node         ; Skip if NULL
 
-    mov rsi, r8
-    mov rdi, rcx
-    call str_concat
-    mov rcx, rax
+    ; Concatenate result with current->hash
+    mov rsi, r8           ; Pass current->hash as second argument
+    mov rdi, rbx          ; Pass result as first argument
+    call str_concat       ; Call str_concat(result, current->hash)
+    test rax, rax         ; Check if str_concat failed
+    jz .free_and_return_null
+    mov rbx, rax          ; Update result pointer
 
 .next_node:
-    mov rdx, [rdx]
-    jmp .loop_start
+    mov rcx, [rcx]        ; Move to the next node (current = current->next)
+    jmp .loop_start       ; Repeat loop
 
 .end_concat:
-    mov rax, rcx
+    mov rax, rbx          ; Return the result
+    pop rbp
+    ret
 
+.free_and_return_null:
+    mov rdi, rbx          ; Free the allocated result
+    call free
 .return_null:
-    mov rax, NULL
-    mov rsp, rbp
+    xor rax, rax          ; Return NULL
     pop rbp
     ret
 
