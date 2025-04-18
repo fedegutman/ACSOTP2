@@ -57,6 +57,34 @@ string_proc_node_create_asm:
     ret
 
 string_proc_list_add_node_asm:
+    push rbp
+    mov rbp, rsp
+
+    call string_proc_node_create_asm
+    test rax, rax ; chequeo si el nodo se creo correctamente
+    je .return_null
+
+    ; me fijo si la lista esta vacía
+    mov rbx, [rdi]
+    mov rdx, [rbx]
+    cmp rdx, NULL
+    je .add_as_first
+
+    mov rdx, [rbx + 8]
+    mov r8, rax
+    mov qword [rdx], r8
+    mov qword [rax + 8], rdx
+    mov [rbx + 8], rax
+    jmp .return
+
+.add_as_first:
+    mov [rbx], rax ; first
+    mov [rbx + 8], rax ; last
+
+.return_null:
+    pop rbp
+    ret      
+
 
 string_proc_list_concat_asm:
 
