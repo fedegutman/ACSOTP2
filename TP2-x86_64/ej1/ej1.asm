@@ -86,7 +86,7 @@ string_proc_list_add_node_asm:
     mov [rcx + 0], r9
     mov [r9 + 8], rcx
     mov [r12 + 8], r9
-    jmp .fin_add
+    jmp .return
 
 .empty_list:
     mov [r12 + 0], r9
