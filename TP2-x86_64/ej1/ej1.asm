@@ -160,11 +160,9 @@ string_proc_list_concat_asm:
     jmp .loop
     
 .concat_error:
-    cmp r14, NULL
-    je .return
     mov rdi, r14
     call free
-    xor r14, r14 ; al hacer xor con dos registros se borra el contenido
+    xor r14, r14 ; al hacer xor entre dos registros se borra el contenido
     
 .return:
     mov rax, r14
