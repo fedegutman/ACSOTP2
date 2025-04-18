@@ -33,7 +33,7 @@ string_proc_list_create_asm:
     mov qword [rax], NULL ; first = NULL
     mov qword [rax + 8], NULL ; last = NULL
 
-.return
+.return:
     ; deshago la pila
     pop rbp
     ret
@@ -59,7 +59,7 @@ string_proc_node_create_asm:
     mov byte [rax + 16], r12b ; type
     mov qword [rax + 24], r13 ; hash
 
-.return 
+.return:
     pop r13
     pop r12
     pop rbp
@@ -101,11 +101,11 @@ string_proc_list_add_node_asm:
     mov [rbx + 8], r14
     jmp .return ; ver de sacarlo
 
-.empty_list
+.empty_list:
     mov [rbx], r14
     mov [rbx + 8], r14
 
-.return
+.return:
     pop r14
     pop r13
     pop r12
