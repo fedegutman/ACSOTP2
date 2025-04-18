@@ -3,6 +3,9 @@
 %define TRUE 1
 %define FALSE 0
 
+section .data
+empty_string: db 0
+
 section .text
 
 global string_proc_list_create_asm
@@ -46,7 +49,7 @@ string_proc_node_create_asm:
     ; inicializo el nodo
     mov qword [rax], NULL ; next = NULL
     mov qword [rax + 8], NULL ; previous = NULL
-    mov byte [rax + 16], bl ; type = valor de dil
+    mov byte [rax + 16], bl ; type = valor d dil
     mov qword [rax + 24], r12 ; hash = puntero
 
     pop r12
@@ -99,13 +102,12 @@ string_proc_list_concat_asm:
     mov r13b, sil
     mov r14, rdx
 
-    ; Concatenamos directamente, sin usar empty_string
-    mov rdi, rsi      ; rdi = cadena que concatenamos
-    mov rsi, r14      ; rsi = cadena a concatenar
+    mov rdi, empty_string
+    mov rsi, r14
     call str_concat
-    mov rbx, rax      ; rbx = resultado de la concatenación
+    mov rbx, rax
 
-    mov r15, [r12]    ; r15 = primer nodo de la lista
+    mov r15, [r12]
 
 .process_node:
     test r15, r15
