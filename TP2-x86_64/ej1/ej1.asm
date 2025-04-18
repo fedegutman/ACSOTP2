@@ -150,7 +150,7 @@ string_proc_list_concat_asm:
 
     mov rsi, r8
     mov rdi, rcx
-    call str_concat_asm
+    call str_concat
     mov rcx, rax
 
 .next_node:
@@ -165,3 +165,42 @@ string_proc_list_concat_asm:
     mov rsp, rbp
     pop rbp
     ret
+
+strlen_asm:
+    push rbp
+    mov rbp, rsp
+
+    mov rax, rdi        ; rdi contains the pointer to the string
+    xor rcx, rcx        ; rcx will count the length
+
+strlen_loop:
+    cmp byte [rax], 0   ; Check if the current byte is null
+    je strlen_done      ; If null, we're done
+    inc rax             ; Move to the next character
+    inc rcx             ; Increment the length counter
+    jmp strlen_loop     ; Repeat the loop
+
+strlen_done:
+    mov rax, rcx        ; Return the length in rax
+    pop rbp
+    ret
+
+strcpy_asm:
+    push rbp
+    mov rbp, rsp
+
+    mov rax, rdi        ; Save the destination pointer to return it
+
+strcpy_loop:
+    mov bl, byte [rsi]  ; Load the current byte from the source
+    mov byte [rdi], bl  ; Copy the byte to the destination
+    test bl, bl         ; Check if the byte is null
+    je strcpy_done      ; If null, we're done
+    inc rsi             ; Move to the next byte in the source
+    inc rdi             ; Move to the next byte in the destination
+    jmp strcpy_loop     ; Repeat the loop
+
+strcpy_done:
+    pop rbp
+    ret
+
