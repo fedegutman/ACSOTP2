@@ -54,7 +54,7 @@ string_proc_node_create_asm:
 
 string_proc_list_add_node_asm:
     ; Call string_proc_node_create_asm with type (sil) and hash (rdx)
-    mov rsi, sil         ; Move type to rsi (second argument for node creation)
+    movzx rsi, sil       ; Zero-extend type (sil) into rsi (second argument for node creation)
     mov rdx, rdx         ; Hash is already in rdx
     call string_proc_node_create_asm
     test rax, rax        ; Check if node creation failed
