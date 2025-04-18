@@ -17,12 +17,11 @@ extern malloc
 extern free
 extern str_concat
 
-
 string_proc_list_create_asm:
     push rbp
     mov rbp, rsp ; puntero de la pila
 
-    mov rdi, 16 ; bytes necesarios para malloc
+    mov edi, 16 ; bytes necesarios para malloc
     call malloc ;
 
     cmp rax, NULL
@@ -32,9 +31,22 @@ string_proc_list_create_asm:
     mov qword [rax], NULL
     mov qword [rax + 8], NULL
 
-.return_null:
+    mov rsp
     pop rbp
     ret
+
+.return_null:
+    mov rax, NULL
+    mov rsp, rbp
+    pop rbp
+    ret
+
+
+
+
+
+
+
 
 string_proc_node_create_asm:
     push rbp
