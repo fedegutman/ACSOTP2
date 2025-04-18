@@ -67,39 +67,36 @@ string_proc_node_create_asm:
     pop rbp
     ret
 
-
 string_proc_list_add_node_asm:
     push rbp
     mov rbp, rsp
-
     push rbx
     push r12
 
-    mov r12, rdi 
-    movzx edi, sil
+    mov rbx, rdi
+    test rbx, rbx
+    jz .return_null
+
+    movzx r12, sil
     mov rsi, rdx
+    movzx edi, r12b
 
     call string_proc_node_create_asm
     cmp rax, NULL
-    je .end 
+    je .return_null
 
-    mov rbx, rax
-    mov rdi, r12
+    cmp qword [rbx], 0
+    jne .not_empty
 
-    mov rdx, [rdi + 8]
-    cmp rdx, NULL
-    je .list_empty   ; Si está vacía, proceder a agregar el primer nodo
-
-.list_not_empty:
-    mov [rdx], rbx
-    mov [rbx + 8], rdx
-    mov [rdi + 8], rbx
+    mov [rbx], rax
+    mov [rbx + 8], rax
     jmp .end
 
-.list_empty:
-    mov [rdi], rbx
-    mov [rdi + 8], rbx
-    jmp .end
+.not_empty:
+    mov rcx, [rbx + 8]
+    mov [rax + 8], rcx
+    mov [rcx], rax
+    mov [rbx + 8], rax
 
 .end:
     pop r12
@@ -108,4 +105,63 @@ string_proc_list_add_node_asm:
     pop rbp
     ret
 
+.return_null:
+    mov rax, NULL
+    jmp .end
+
 string_proc_list_concat_asm:
+    push rbp
+    mov rbp, rsp
+
+    test rdi, rdi
+    jz .return_null
+
+    test rsi, rsi
+    jz .return_null
+
+    mov rdx, rsi
+    call strlen_asm
+    add rax, 1
+
+    mov edi, rax
+    call malloc
+    test rax, rax
+    jz .return_null
+
+    mov rsi, rsi
+    mov rdi, rax
+    call strcpy_asm
+
+    mov rbx, rdi
+    mov rdx, [rbx]
+    mov rcx, rax
+
+.loop_start:
+    test rdx, rdx
+    jz .end_concat
+
+    movzx r8b, byte [rdx + 16]
+    cmp r8b, dil
+    jne .next_node
+
+    mov r8, [rdx + 24]
+    test r8, r8        
+    jz .next_node
+
+    mov rsi, r8
+    mov rdi, rcx
+    call str_concat_asm
+    mov rcx, rax
+
+.next_node:
+    mov rdx, [rdx]
+    jmp .loop_start
+
+.end_concat:
+    mov rax, rcx
+
+.return_null:
+    mov rax, NULL
+    mov rsp, rbp
+    pop rbp
+    ret
