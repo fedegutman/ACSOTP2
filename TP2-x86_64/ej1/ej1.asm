@@ -62,7 +62,7 @@ string_proc_list_add_node_asm:
     mov rdx, rdx         ; Hash is already in rdx
     call string_proc_node_create_asm
     test rax, rax        ; Check if node creation failed
-    je .return
+    je .return_null
 
     ; rax now contains the new node
     mov r8, rax          ; Save the new node in r8
