@@ -35,104 +35,111 @@ string_proc_list_create_asm:
     ret
 
 string_proc_node_create_asm:
-    push rbx
-    push r12
-
-    mov bl, dil
-    mov r12, rsi
-
-    mov edi, 32 ; tamaño del nodo
+    mov edi, 32          ; Pass 32 (size of the node) to malloc
     call malloc
-    cmp rax, NULL
-    je .return
-    
-    ; inicializo el nodo
+    test rax, rax        ; Check if malloc failed
+    je .return_null
+
+    ; Initialize the node
     mov qword [rax], NULL ; next = NULL
     mov qword [rax + 8], NULL ; previous = NULL
-    mov byte [rax + 16], bl ; type = valor d dil
-    mov qword [rax + 24], r12 ; hash = puntero
+    mov byte [rax + 16], dil  ; type = dil (first argument)
+    mov qword [rax + 24], rsi ; hash = rsi (second argument)
 
-    pop r12
-    pop rbx
     ret
 
-.return:
-    pop r12    
-    xor rax, rax
-    pop rbx
+.return_null:
+    xor rax, rax         ; Return NULL
     ret
 
 string_proc_list_add_node_asm:
-    push r12
-    mov r12, rdi
-    mov rdi, rsi
-    mov rsi, rdx
-
+    ; Call string_proc_node_create_asm with type (sil) and hash (rdx)
+    mov rsi, sil         ; Move type to rsi (second argument for node creation)
+    mov rdx, rdx         ; Hash is already in rdx
     call string_proc_node_create_asm
-    cmp rax, NULL
-    je .return  
+    test rax, rax        ; Check if node creation failed
+    je .return
 
-    mov r9, rax
-
-    mov rcx, [r12 + 8]
-    test rcx, rcx
+    ; rax now contains the new node
+    mov r8, rax          ; Save the new node in r8
+    mov r9, [rdi + 8]    ; Load list->last into r9
+    test r9, r9          ; Check if the list is empty
     je .empty_list
 
-    mov [rcx + 0], r9
-    mov [r9 + 8], rcx
-    mov [r12 + 8], r9
-    jmp .return
+    ; Add the node to the end of the list
+    mov [r9], r8         ; last->next = new_node
+    mov [r8 + 8], r9     ; new_node->previous = last
+    mov [rdi + 8], r8    ; list->last = new_node
+    ret
 
 .empty_list:
-    mov [r12 + 0], r9
-    mov [r12 + 8], r9
+    mov [rdi], r8        ; list->first = new_node
+    mov [rdi + 8], r8    ; list->last = new_node
+    ret
 
 .return:
-    pop r12
     ret
 
 string_proc_list_concat_asm:
+    push rbx             ; Save registers
     push r12
     push r13
     push r14
-    push rbx          
-    push r15      
+    push r15
 
-    mov r12, rdi
-    mov r13b, sil
-    mov r14, rdx
+    ; Initialize variables
+    mov r12, rdi         ; r12 = list
+    mov r13b, sil        ; r13b = type
+    mov r14, rdx         ; r14 = hash
 
-    mov rdi, empty_string
-    mov rsi, r14
+    ; Allocate memory for the result (str_concat(empty_string, hash))
+    mov rdi, empty_string ; First argument to str_concat
+    mov rsi, r14          ; Second argument to str_concat
     call str_concat
-    mov rbx, rax
+    test rax, rax         ; Check if str_concat failed
+    je .return_null
+    mov rbx, rax          ; rbx = result
 
-    mov r15, [r12]
+    ; Iterate through the list
+    mov r15, [r12]        ; r15 = list->first
 
 .process_node:
-    test r15, r15
-    jz .return
+    test r15, r15         ; Check if current node is NULL
+    jz .return_result
 
+    ; Check if current->type == type
     cmp byte [r15 + 16], r13b
     jne .next_node
 
-    mov rdi, rbx
-    mov rsi, [r15 + 24]
+    ; Check if current->hash != NULL
+    mov rdi, rbx          ; First argument to str_concat (current result)
+    mov rsi, [r15 + 24]   ; Second argument to str_concat (current->hash)
     call str_concat
-
-    xchg rbx, rax
-    mov rdi, rax
-    call free
+    test rax, rax         ; Check if str_concat failed
+    je .free_and_return_null
+    mov rbx, rax          ; Update result
 
 .next_node:
-    mov r15, [r15]
+    mov r15, [r15]        ; Move to the next node (current = current->next)
     jmp .process_node
 
-.return:
-    mov rax, rbx
+.return_result:
+    mov rax, rbx          ; Return the result
     pop r15
-    pop rbx
     pop r14
     pop r13
     pop r12
+    pop rbx
+    ret
+
+.free_and_return_null:
+    mov rdi, rbx          ; Free the allocated result
+    call free
+.return_null:
+    xor rax, rax          ; Return NULL
+    pop r15
+    pop r14
+    pop r13
+    pop r12
+    pop rbx
     ret
