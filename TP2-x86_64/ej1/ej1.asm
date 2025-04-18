@@ -148,18 +148,18 @@ string_proc_list_concat_asm:
     mov rsi, r14
     call strcpy
 
-    mov rbx, [r12 + LIST_FIRST]
+    mov rbx, [r12]
 
 .loop_start:
     cmp rbx, NULL
     je .loop_end
 
-    movzx edi, byte [rbx + NODE_TYPE]
+    movzx edi, byte [rbx + 16]
 
     cmp dil, r13b
     jne .next_node
 
-    mov rsi, [rbx + NODE_HASH]
+    mov rsi, [rbx + 24]
 
     mov rdi, r15
     call str_concat
@@ -173,7 +173,7 @@ string_proc_list_concat_asm:
     mov r15, rax
 
 .next_node:
-    mov rbx, [rbx + NODE_NEXT]
+    mov rbx, [rbx]
     jmp .loop_start
 
 .loop_end:
