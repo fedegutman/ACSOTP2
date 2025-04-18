@@ -93,59 +93,102 @@ string_proc_list_concat_asm:
     push rbp
     mov rbp, rsp
 
-    test rdi, rdi
+    ; Validate input parameters (list and hash)
+    test rdi, rdi        ; Check if list (rdi) is NULL
     je .return_null
-    test rsi, rsi
+    test rsi, rsi        ; Check if hash (rsi) is NULL
     je .return_null
 
-    mov rdi, rsi
-    call strlen
-    add rax, 1
-    mov rdi, rax
-    call malloc
-    test rax, rax
+    ; Allocate memory for the initial result (strlen(hash) + 1)
+    mov rdi, rsi         ; Pass hash to strlen
+    call strlen          ; rax = strlen(hash)
+    add rax, 1           ; Add 1 for the null terminator
+    mov rdi, rax         ; Pass size to malloc
+    call malloc          ; Allocate memory for result
+    test rax, rax        ; Check if malloc failed
     je .return_null
-    mov rbx, rax
+    mov rbx, rax         ; Save result pointer in rbx
 
-    mov rdi, rbx
-    mov rsi, rsi
-    call strcpy
+    ; Copy hash into result
+    mov rdi, rbx         ; Destination (result)
+    mov rsi, rsi         ; Source (hash)
+    call strcpy          ; Copy hash into result
 
-    mov rcx, [rdi]
-    
+    ; Iterate through the list
+    mov rcx, [rdi]       ; rcx = list->first
 .loop:
-    test rcx, rcx
-    je .done
+    test rcx, rcx        ; Check if current node is NULL
+    je .done             ; Exit loop if NULL
 
-    movzx rdx, byte [rcx + 16]
-    cmp dl, sil
-    jne .next_node
+    ; Check if current->type == type
+    movzx rdx, byte [rcx + 16] ; Load current->type into rdx
+    cmp dl, sil          ; Compare type (dl) with input type (sil)
+    jne .next_node       ; Skip if types do not match
 
-    mov rdi, [rcx + 24]
-    test rdi, rdi
-    je .next_node
+    ; Check if current->hash != NULL
+    mov rdi, [rcx + 24]  ; Load current->hash into rdi
+    test rdi, rdi        ; Check if hash is NULL
+    je .next_node        ; Skip if NULL
 
-    mov rsi, rdi
-    mov rdi, rbx
-    call str_concat
-    test rax, rax
+    ; Concatenate result with current->hash
+    mov rsi, rdi         ; Pass current->hash as second argument
+    mov rdi, rbx         ; Pass result as first argument
+    call str_concat      ; Call str_concat(result, current->hash)
+    test rax, rax        ; Check if str_concat failed
     je .free_and_return_null
-    mov rbx, rax 
+    mov rbx, rax         ; Update result pointer
 
 .next_node:
-    mov rcx, [rcx]
-    jmp .loop
+    mov rcx, [rcx]       ; Move to the next node (current = current->next)
+    jmp .loop            ; Repeat loop
 
 .done:
-    mov rax, rbx
+    mov rax, rbx         ; Return the result
     pop rbp
     ret
 
 .free_and_return_null:
-    mov rdi, rbx
+    mov rdi, rbx         ; Free the allocated result
     call free
 .return_null:
-    xor rax, rax
+    xor rax, rax         ; Return NULL
     pop rbp
     ret
 
+strlen:
+    push rbp
+    mov rbp, rsp
+
+    mov rax, rdi        ; rdi contains the pointer to the string
+    xor rcx, rcx        ; rcx will count the length
+
+strlen_loop:
+    cmp byte [rax], 0   ; Check if the current byte is null
+    je strlen_done      ; If null, we're done
+    inc rax             ; Move to the next character
+    inc rcx             ; Increment the length counter
+    jmp strlen_loop     ; Repeat the loop
+
+strlen_done:
+    mov rax, rcx        ; Return the length in rax
+    pop rbp
+    ret
+
+strcpy:
+    push rbp
+    mov rbp, rsp
+
+    mov rax, rdi        ; Save the destination pointer to return it
+
+strcpy_loop:
+    mov bl, byte [rsi]  ; Load the current byte from the source
+    mov byte [rdi], bl  ; Copy the byte to the destination
+    test bl, bl         ; Check if the byte is null
+    je strcpy_done      ; If null, we're done
+    inc rsi             ; Move to the next byte in the source
+    inc rdi             ; Move to the next byte in the destination
+    jmp strcpy_loop     ; Repeat the loop
+
+strcpy_done:
+    pop rbp
+    ret
