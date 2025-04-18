@@ -41,18 +41,11 @@ string_proc_list_create_asm:
     pop rbp
     ret
 
-
-
-
-
-
-
-
 string_proc_node_create_asm:
     push rbp
     mov rbp, rsp
 
-    mov rdi, 32 ; tamaño del nodo
+    mov edi, 32 ; tamaño del nodo
     call malloc
 
     cmp rax, NULL
@@ -64,7 +57,14 @@ string_proc_node_create_asm:
     mov byte [rax + 16], 0 ; type = 0
     mov qword [rax + 24], NULL ; hash = NULL
 
+    mov rax, rbx
+    mov rsp, rbp
+    pop rbp
+    ret
+
 .return_null:
+    mov rax, NULL
+    mov rsp, rbp
     pop rbp
     ret
 
