@@ -16,6 +16,7 @@ global string_proc_list_concat_asm
 extern malloc
 extern free
 extern str_concat
+extern strdup
 
 
 string_proc_list_create_asm:
@@ -161,6 +162,8 @@ string_proc_list_concat_asm:
     jmp .loop
     
 .concat_error:
+    cmp r14, NULL
+    jeq .return
     mov rdi, r14
     call free
     xor r14, r14 ; al hacer xor con dos registros se borra el contenido
