@@ -30,7 +30,7 @@ string_proc_list_create_asm:
 
     ret
 
-.return_null:
+.return:
     xor rax, rax     ; hago xor consigo mismo para limpiarlo
     ret
 
@@ -44,7 +44,7 @@ string_proc_node_create_asm:
     mov edi, 32 ; tamaño del nodo
     call malloc
     cmp rax, NULL
-    je .return_null
+    je .return
     
     ; inicializo el nodo
     mov qword [rax], NULL ; next = NULL
@@ -56,7 +56,7 @@ string_proc_node_create_asm:
     pop rbx
     ret
 
-.return_null:
+.return:
     pop r12    
     xor rax, rax
     pop rbx
