@@ -96,7 +96,7 @@ string_proc_list_add_node_asm:
     mov rdx, [rdi + 8]
 
     cmp rdx, NULL
-    jne .list_not_empty
+    jne .not_empty
 
     mov [rdi], rbx
     mov [rdi + 8], rbx
