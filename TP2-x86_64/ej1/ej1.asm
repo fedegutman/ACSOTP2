@@ -105,72 +105,37 @@ string_proc_list_concat_asm:
     mov r13b, sil
     mov r14, rdx
 
-    cmp r12, NULL
-    je .fail_null_input
-    cmp r14, NULL
-    je .fail_null_input
-
-    mov rdi, r14
-    call strlen
-    inc rax
-
-    mov rdi, rax
-    call malloc
-    cmp rax, NULL
-    je .fail
-    mov r15, rax
-
-    mov rdi, r15
+    mov rdi, empty_string
     mov rsi, r14
-    call strcpy
+    call str_concat
+    mov rbx, rax
 
-    mov rbx, [r12]
+    mov r15, [r12]
 
-.loop_start:
-    cmp rbx, NULL
-    je .loop_end
+.process_node:
+    test r15, r15
+    jz .return
 
-    movzx edi, byte [rbx + 16]
-    cmp dil, r13b
+    cmp byte [r15 + 16], r13b
     jne .next_node
 
-    mov rsi, [rbx + 24]
-    test rsi, rsi
-    je .next_node
-
-    mov rdi, r15
+    mov rdi, rbx
+    mov rsi, [r15 + 24]
     call str_concat
 
-    cmp rax, NULL
-    je .fail_concat
-
-    mov rdi, r15
+    xchg rbx, rax
+    mov rdi, rax
     call free
-
-    mov r15, rax
 
 .next_node:
-    mov rbx, [rbx]
-    jmp .loop_start
-
-.loop_end:
-    mov rax, r15
-    jmp .end
-
-.fail_concat:
-    mov rdi, r15
-    call free
-
-.fail:
-.fail_null_input:
-    mov rax, NULL
+    mov r15, [r15]
+    jmp .process_node
 
 .end:
+    mov rax, rbx
     pop r15
+    pop rbx
     pop r14
     pop r13
     pop r12
-    pop rbx
-    mov rsp, rbp
-    pop rbp
     ret
