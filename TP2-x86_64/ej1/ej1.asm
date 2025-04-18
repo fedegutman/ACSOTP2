@@ -53,6 +53,10 @@ string_proc_node_create_asm:
     ret
 
 string_proc_list_add_node_asm:
+    ; Validate input list pointer
+    test rdi, rdi        ; Check if the list pointer is NULL
+    je .return_null
+
     ; Call string_proc_node_create_asm with type (sil) and hash (rdx)
     movzx rsi, sil       ; Zero-extend type (sil) into rsi (second argument for node creation)
     mov rdx, rdx         ; Hash is already in rdx
@@ -77,7 +81,8 @@ string_proc_list_add_node_asm:
     mov [rdi + 8], r8    ; list->last = new_node
     ret
 
-.return:
+.return_null:
+    xor rax, rax         ; Return NULL
     ret
 
 string_proc_list_concat_asm:
