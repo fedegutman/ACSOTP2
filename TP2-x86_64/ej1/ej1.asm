@@ -4,6 +4,7 @@
 %define FALSE 0
 
 section .data
+empty_string: db 0
 
 section .text
 
@@ -85,7 +86,7 @@ string_proc_list_add_node_asm:
     mov [r12 + 8], r9
     
 .not_empty:
-    mov [rcx + 0], r9
+    mov [rcx], r9
     mov [r9 + 8], rcx
     mov [r12 + 8], r9
     jmp .return
@@ -131,7 +132,7 @@ string_proc_list_concat_asm:
     mov r15, [r15]
     jmp .process_node
 
-.end:
+.return:
     mov rax, rbx
     pop r15
     pop rbx
