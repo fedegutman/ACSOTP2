@@ -81,13 +81,13 @@ string_proc_list_add_node_asm:
     cmp rcx, NULL
     jne .not_empty
 
-    mov [r12 + LIST_FIRST], r9
-    mov [r12 + LIST_LAST], r9
+    mov [r12], r9
+    mov [r12 + 8], r9
     
 .not_empty:
-    mov [rcx + NODE_NEXT], r9
-    mov [r9 + NODE_PREVIOUS], rcx
-    mov [r12 + LIST_LAST], r9
+    mov [rcx + 0], r9
+    mov [r9 + 8], rcx
+    mov [r12 + 8], r9
     jmp .return
 
 .return:
