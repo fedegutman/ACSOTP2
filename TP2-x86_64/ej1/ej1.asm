@@ -32,73 +32,80 @@ string_proc_list_create_asm:
     ret
 
 string_proc_node_create_asm:
-    ; rdi = type (dil)
-    ; rsi = hash (r12)
+    push rbx
+    push r12
 
-    movzx rdi, dil            ; tipo (movemos un byte a un registro de 64 bits)
-    mov rsi, r12              ; hash (r12 ya es un registro de 64 bits)
+    mov bl, dil
+    mov r12, rsi
 
-    mov rdx, 32               ; tamaño del nodo
+    mov edi, 32 ; tamaño del nodo
     call malloc
     cmp rax, NULL
     je .return
     
     ; inicializo el nodo
-    mov qword [rax], NULL     ; next = NULL
+    mov qword [rax], NULL ; next = NULL
     mov qword [rax + 8], NULL ; previous = NULL
-    mov byte [rax + 16], rdi  ; type = valor de tipo
-    mov qword [rax + 24], rsi ; hash = puntero
+    mov byte [rax + 16], bl ; type = valor de dil
+    mov qword [rax + 24], r12 ; hash = puntero
 
+    pop r12
+    pop rbx
     ret
 
 .return:
+    pop r12    
     xor rax, rax
+    pop rbx
     ret
 
 string_proc_list_add_node_asm:
-    ; rdi = lista (r12)
-    ; rsi = nodo a agregar (rsi)
-    ; rdx = nodo previo (rdx)
+    push r12
+    mov r12, rdi
+    mov rdi, rsi
+    mov rsi, rdx
 
-    mov r12, rdi           ; lista
-    mov rsi, rdx           ; nuevo nodo
     call string_proc_node_create_asm
     cmp rax, NULL
-    je .return
+    je .return  
 
-    mov r9, rax           ; r9 = nuevo nodo
+    mov r9, rax
 
-    mov rbx, [r12 + 8]    ; rbx = último nodo
-    test rbx, rbx
+    mov rcx, [r12 + 8]
+    test rcx, rcx
     je .empty_list
 
-    mov [rbx], r9         ; next del último = nuevo nodo
-    mov [r9 + 8], rbx     ; previous del nuevo nodo = último
-    mov [r12 + 8], r9     ; last = nuevo nodo
+    mov [rcx + 0], r9
+    mov [r9 + 8], rcx
+    mov [r12 + 8], r9
     jmp .return
 
 .empty_list:
-    mov [r12], r9         ; first = nuevo nodo
-    mov [r12 + 8], r9     ; last = nuevo nodo
+    mov [r12 + 0], r9
+    mov [r12 + 8], r9
 
 .return:
+    pop r12
     ret
 
 string_proc_list_concat_asm:
-    ; rdi = lista (r12)
-    ; rsi = tipo de nodo (r13b)
-    ; rdx = cadena a concatenar (r14)
+    push r12
+    push r13
+    push r14
+    push rbx          
+    push r15      
 
-    mov r12, rdi           ; lista
-    mov r13b, sil          ; tipo de nodo
-    mov r14, rdx           ; cadena a concatenar
+    mov r12, rdi
+    mov r13b, sil
+    mov r14, rdx
 
-    ; Usamos directamente rdi y rsi para concatenar, sin empty_string
-    mov rdi, rsi           ; cadena a concatenar
+    ; Concatenamos directamente, sin usar empty_string
+    mov rdi, rsi      ; rdi = cadena que concatenamos
+    mov rsi, r14      ; rsi = cadena a concatenar
     call str_concat
-    mov rbx, rax           ; rbx = cadena concatenada
+    mov rbx, rax      ; rbx = resultado de la concatenación
 
-    mov r15, [r12]         ; r15 = primer nodo de la lista
+    mov r15, [r12]    ; r15 = primer nodo de la lista
 
 .process_node:
     test r15, r15
@@ -121,4 +128,9 @@ string_proc_list_concat_asm:
 
 .return:
     mov rax, rbx
+    pop r15
+    pop rbx
+    pop r14
+    pop r13
+    pop r12
     ret
