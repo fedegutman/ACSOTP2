@@ -35,19 +35,19 @@ string_proc_node_create_asm:
     ; rdi = type (dil)
     ; rsi = hash (r12)
 
-    mov rdi, dil            ; tipo
-    mov rsi, r12            ; hash
+    movzx rdi, dil            ; tipo (movemos un byte a un registro de 64 bits)
+    mov rsi, r12              ; hash (r12 ya es un registro de 64 bits)
 
-    mov rdx, 32             ; tamaño del nodo
+    mov rdx, 32               ; tamaño del nodo
     call malloc
     cmp rax, NULL
     je .return
     
     ; inicializo el nodo
-    mov qword [rax], NULL   ; next = NULL
-    mov qword [rax + 8], NULL   ; previous = NULL
-    mov byte [rax + 16], rdi   ; type = valor de tipo
-    mov qword [rax + 24], rsi  ; hash = puntero
+    mov qword [rax], NULL     ; next = NULL
+    mov qword [rax + 8], NULL ; previous = NULL
+    mov byte [rax + 16], rdi  ; type = valor de tipo
+    mov qword [rax + 24], rsi ; hash = puntero
 
     ret
 
