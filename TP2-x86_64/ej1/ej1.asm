@@ -28,7 +28,7 @@ string_proc_list_create_asm:
     call malloc
 
     cmp rax, NULL ; si malloc falla -> return
-    jeq .return
+    je .return
     
     ; inicializo la lista vaica
     mov qword [rax], NULL ; first = NULL
@@ -52,7 +52,7 @@ string_proc_node_create_asm:
     call malloc
 
     cmp rdi, NULL
-    jeq .return
+    je .return
 
     ; inicializo el nodo
     mov qword [rax], NULL ; next
@@ -85,7 +85,7 @@ string_proc_list_add_node_asm:
     call string_proc_node_create_asm
 
     cmp rax, NULL
-    jeq .return
+    je .return
 
     mov r14, rax ; guardo el nuevo nodo
     
@@ -93,7 +93,7 @@ string_proc_list_add_node_asm:
     ; i. lista vacia
 
     cmp qword [rbx], NULL ; chequeo si list->first=NULL
-    jeq .empty_list
+    je .empty_list
 
     ; ii. lista no vacia
     mov rcx, [rbx + 8] 
@@ -131,14 +131,14 @@ string_proc_list_concat_asm:
     call strdup
     mov r14, rax ; result
     cmp r14, NULL
-    jeq .return
+    je .return
     
     ; while
     mov r15, [rbx] ; current
 
 .loop:
     cmp r15, NULL
-    jeq .return
+    je .return
 
     ; verificar tipo
     movzx eax, byte [r15+16] ; type
@@ -150,7 +150,7 @@ string_proc_list_concat_asm:
     mov rsi, [r15+24]; hash
     call str_concat
     cmp rax, NULL
-    jeq .concat_error
+    je .concat_error
     
     ; libero el string anterior
     mov rdi, r14
@@ -163,7 +163,7 @@ string_proc_list_concat_asm:
     
 .concat_error:
     cmp r14, NULL
-    jeq .return
+    je .return
     mov rdi, r14
     call free
     xor r14, r14 ; al hacer xor con dos registros se borra el contenido
