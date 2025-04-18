@@ -31,7 +31,7 @@ string_proc_list_create_asm:
     
     ; inicializo la lista vaica
     mov qword [rax], NULL ; first = NULL
-    mov qword [rax + 8], NULL ; last = null
+    mov qword [rax + 8], NULL ; last = NULL
 
 .return
     ; deshago la pila
@@ -135,7 +135,7 @@ string_proc_list_concat_asm:
     mov r15, [rbx] ; current
 
 .loop:
-    test r14, r14
+    test r15, r15
     jz .return
 
     ; verificar tipo
@@ -145,7 +145,7 @@ string_proc_list_concat_asm:
     
     ; Concatenar
     mov rdi, r14 ; resultado actual
-    mov rsi, [r15+24]; hash
+    mov rsi, [r15 + 24]; hash
     call str_concat
     test rax, rax
     jz .concat_error
