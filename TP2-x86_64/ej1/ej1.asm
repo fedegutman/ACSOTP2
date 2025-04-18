@@ -17,56 +17,85 @@ extern malloc
 extern free
 extern str_concat
 
+; -----------------------------------------------
+; string_proc_list_create_asm:
+; Crea una nueva lista de procesamiento de cadenas.
+; - Reserva 16 bytes en memoria usando malloc.
+; - Inicializa los punteros `first` y `last` a NULL (0).
+; Retorna:
+; - La dirección del bloque de memoria si se asignó correctamente.
+; - NULL (0) si la asignación falla.
+; -----------------------------------------------
 string_proc_list_create_asm:
-    push rbp
-    mov rbp, rsp ; puntero de la pila
-
-    mov edi, 16 ; bytes necesarios para malloc
-    call malloc ;
-
-    cmp rax, NULL
-    je .return_null ; if rax == NULL (malloc falla) return null
-
-    ; inicializo la lista (first y last)
-    mov qword [rax], NULL
-    mov qword [rax + 8], NULL
-
-    mov rsp, rbp
-    pop rbp
-    ret
-
-.return_null:
-    mov rax, NULL
-    mov rsp, rbp
-    pop rbp
-    ret
-
-string_proc_node_create_asm:
     push rbp
     mov rbp, rsp
 
-    mov edi, 32 ; tamaño del nodo
+    mov rdi, 16
     call malloc
 
-    cmp rax, NULL
+    test rax, rax
     je .return_null
 
-    ; inicializo el nodo
-    mov qword [rax], NULL ; next = NULL
-    mov qword [rax + 8], NULL ; previous = NULL
-    mov byte [rax + 16], 0 ; type = 0
-    mov qword [rax + 24], NULL ; hash = NULL
+    mov qword [rax], 0
+    mov qword [rax + 8], 0
 
-    mov rsp, rbp
     pop rbp
     ret
 
 .return_null:
-    mov rax, NULL
-    mov rsp, rbp
+    xor rax, rax     ; rax = 0 (NULL)
     pop rbp
     ret
 
+
+; ----------------------------------------------------------
+; string_proc_node_create_asm:
+; Crea un nuevo nodo para una lista de procesamiento de cadenas.
+; - Reserva 32 bytes de memoria para el nodo usando malloc.
+; - Inicializa los campos:
+;   - `next` y `previous` en NULL (0).
+;   - `type` con el valor de `dil` (el tipo proporcionado).
+;   - `hash` con el valor de `rsi` (el hash proporcionado).
+; Retorna:
+; - La dirección del nodo creado si la asignación es exitosa.
+; - NULL (0) si malloc falla.
+; ----------------------------------------------------------
+string_proc_node_create_asm:
+    push rdi
+    push rsi
+
+    mov rdi, 32
+    call malloc
+
+    pop rsi
+    pop rdi
+    test rax, rax
+    je .return_null
+
+    mov qword [rax], 0         ; next
+    mov qword [rax + 8], 0     ; previous
+    mov byte [rax + 16], dil   ; type
+    mov qword [rax + 24], rsi  ; hash
+
+    ret
+
+.return_null:
+    xor rax, rax
+    ret
+
+
+; ----------------------------------------------------------
+; string_proc_list_add_node_asm:
+; Agrega un nuevo nodo al final de una lista doblemente enlazada.
+; - Argumentos:
+;   - `rdi`: Puntero a la lista (`list`).
+;   - `sil`: Tipo del nodo (`type`).
+;   - `rdx`: Puntero al hash del nodo (`hash`).
+; - Retorno:
+;   - Si `list` es NULL, no se realiza ninguna operación.
+;   - Si la creación del nodo falla, no se realizan cambios en la lista.
+;   - Si el nodo se crea correctamente, se actualiza la lista.
+; ----------------------------------------------------------
 string_proc_list_add_node_asm:
     push rbp
     mov rbp, rsp
