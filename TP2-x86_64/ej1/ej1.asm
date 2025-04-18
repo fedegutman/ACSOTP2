@@ -20,7 +20,7 @@ extern str_concat
 
 string_proc_list_create_asm:
     push rbp
-    mov rbp, rsp ; puntero de la pil;a
+    mov rbp, rsp ; puntero de la pila
 
     mov edi, 16 ; bytes necesarios para malloc
     call malloc ;
