@@ -26,8 +26,8 @@ string_proc_list_create_asm:
     mov rdi, 16 ; tamaño de la lista
     call malloc
 
-    test rax, rax ; si malloc falla -> return
-    jz .return
+    cmp rax, NULL ; si malloc falla -> return
+    je .return
     
     ; inicializo la lista vaica
     mov qword [rax], NULL ; first = NULL
@@ -50,8 +50,8 @@ string_proc_node_create_asm:
     mov rdi, 32 ; tamaño del nodo
     call malloc
 
-    test rax, rax
-    jz .return
+    cmp rax, NULL
+    je .return
 
     ; inicializo el nodo
     mov qword [rax], NULL ; next
@@ -83,8 +83,8 @@ string_proc_list_add_node_asm:
     mov rsi, r13
     call string_proc_node_create_asm
 
-    test rax, rax
-    jz .return
+    cmp rax, NULL
+    je .return
 
     mov r14, rax ; guardo el nuevo nodo
     
@@ -129,14 +129,14 @@ string_proc_list_concat_asm:
     mov rdi, r13
     call strdup
     mov r14, rax ; result
-    test r14, r14
-    jz .return
+    cmp r14, NULL
+    je .return
     
     mov r15, [rbx] ; current
 
 .loop:
-    test r15, r15
-    jz .return
+    cmp r15, NULL
+    je .return
 
     ; verificar tipo
     movzx eax, byte [r15+16] ; type
@@ -147,8 +147,8 @@ string_proc_list_concat_asm:
     mov rdi, r14 ; resultado actual
     mov rsi, [r15 + 24]; hash
     call str_concat
-    test rax, rax
-    jz .concat_error
+    cmp rax, NULL
+    je .concat_error
     
     ; libero el string anterior
     mov rdi, r14
