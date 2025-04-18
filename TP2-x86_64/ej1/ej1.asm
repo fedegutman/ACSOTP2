@@ -57,7 +57,6 @@ string_proc_node_create_asm:
     mov byte [rax + 16], 0 ; type = 0
     mov qword [rax + 24], NULL ; hash = NULL
 
-    mov rax, rbx
     mov rsp, rbp
     pop rbp
     ret
@@ -76,23 +75,23 @@ string_proc_list_add_node_asm:
     test rax, rax
     je .return_null
 
-    ; Verificar si la lista está vacía (list->last == NULL)
+    ; veo si la lista esta vacoia
     mov rbx, [rdi]              ; Obtener la lista (list)
-    mov rdx, [rbx + LIST_LAST]  ; Obtener list->last
+    mov rdx, [rbx + 8]  ; Obtener list->last
     cmp rdx, NULL               ; Comprobar si last es NULL
     je .add_as_first            ; Si la lista está vacía, agregar como primer nodo
 
-    ; Si la lista no está vacía: agregar el nuevo nodo al final
-    mov rdx, [rbx + LIST_LAST]  ; Obtener el último nodo
-    mov [rdx + NODE_NEXT], rax  ; last_node->next = new_node
-    mov [rax + NODE_PREVIOUS], rdx ; new_node->previous = last_node
-    mov [rbx + LIST_LAST], rax  ; list->last = new_node
+    ; veo si no
+    mov rdx, [rbx + 8]  ; Obtener el último nodo
+    mov [rdx], rax  ; last_node->next = new_node
+    mov [rax + 8], rdx ; new_node->previous = last_node
+    mov [rbx + 8], rax  ; list->last = new_node
     jmp .return
 
 .add_as_first:
     ; Si la lista está vacía: establecer el primer y último nodo como el nuevo nodo
-    mov [rbx + LIST_FIRST], rax ; list->first = new_node
-    mov [rbx + LIST_LAST], rax  ; list->last = new_node
+    mov [rbx], rax ; list->first = new_node
+    mov [rbx + 8], rax  ; list->last = new_node
 
 .return:
     pop rbp
