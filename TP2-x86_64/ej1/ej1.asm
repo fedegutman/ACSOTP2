@@ -3,8 +3,6 @@
 %define TRUE 1
 %define FALSE 0
 
-section .data
-
 section .text
 
 global string_proc_list_create_asm
@@ -36,7 +34,7 @@ string_proc_list_create_asm:
 string_proc_node_create_asm:
     ; rdi = type (dil)
     ; rsi = hash (r12)
-    
+
     mov rdi, dil            ; tipo
     mov rsi, r12            ; hash
 
@@ -95,8 +93,8 @@ string_proc_list_concat_asm:
     mov r13b, sil          ; tipo de nodo
     mov r14, rdx           ; cadena a concatenar
 
-    mov rdi, rsi  ; vaciar rdi
-    mov rsi, r14           ; cadena a concatenar
+    ; Usamos directamente rdi y rsi para concatenar, sin empty_string
+    mov rdi, rsi           ; cadena a concatenar
     call str_concat
     mov rbx, rax           ; rbx = cadena concatenada
 
