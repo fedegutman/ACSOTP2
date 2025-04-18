@@ -112,105 +112,94 @@ string_proc_list_add_node_asm:
 string_proc_list_concat_asm:
     push rbp
     mov rbp, rsp
+    sub rsp, 16
+    push rbx
+    push r12
+    push r13
+    push r14
+    push r15
 
-    ; Validate input parameters (list and hash)
-    test rdi, rdi        ; Check if list (rdi) is NULL
+    mov rbx, rdi        ; list
+    movzx r12, sil      ; type
+    mov r13, rdx        ; hash
+
+    ; Chequear si list o hash son NULL
+    test rbx, rbx
     jz .return_null
-    test rsi, rsi        ; Check if hash (rsi) is NULL
+    test r13, r13
     jz .return_null
 
-    ; Allocate memory for the initial result (strlen(hash) + 1)
-    mov rdx, rsi         ; Pass hash to strlen
-    call strlen_asm
-    add rax, 1           ; Add 1 for the null terminator
-    mov edi, rax         ; Pass size to malloc
-    call malloc          ; Allocate memory for result
-    test rax, rax        ; Check if malloc failed
-    jz .return_null
-    mov rbx, rax         ; Save result pointer in rbx
+    ; Calcular la longitud de la cadena hash (strlen) y asignar memoria
+    xor rax, rax        ; rax = contador
+.len_loop:
+    cmp byte [r13 + rax], 0
+    je .len_done
+    inc rax
+    jmp .len_loop
+.len_done:
+    inc rax             ; Incluir terminador nulo
+    mov rdi, rax
+    call malloc
+    test rax, rax
+    jz .error
 
-    ; Copy hash into result
-    mov rdi, rbx         ; Destination (result)
-    mov rsi, rsi         ; Source (hash)
-    call strcpy_asm
+    ; Copiar hash al buffer resultante
+    mov r14, rax        ; r14 = result
+    mov rsi, r13        ; source = hash
+    mov rdi, r14        ; destination = result
+.copy_loop:
+    mov cl, [rsi]
+    mov [rdi], cl
+    test cl, cl
+    jz .copy_done
+    inc rsi
+    inc rdi
+    jmp .copy_loop
+.copy_done:
+    mov r15, [rbx]      ; current_node = list->first
 
-    ; Iterate through the list
-    mov rcx, [rdi]       ; rcx = list->first
-    
-.loop_start:
-    test rcx, rcx        ; Check if current node is NULL
-    jz .end_concat
+.loop:
+    test r15, r15
+    jz .success
 
-    ; Check if current->type == type
-    movzx r8b, byte [rcx + 16] ; Load current->type into r8b
-    cmp r8b, dil          ; Compare type (r8b) with input type (dil)
-    jne .next_node        ; Skip if types do not match
+    movzx eax, byte [r15 + 16]  ; current_node->type
+    cmp al, r12b
+    jne .next
 
-    ; Check if current->hash != NULL
-    mov r8, [rcx + 24]    ; Load current->hash into r8
-    test r8, r8           ; Check if hash is NULL
-    jz .next_node         ; Skip if NULL
+    mov rdi, r14
+    mov rsi, [r15 + 24] ; current_node->hash
+    call str_concat
+    test rax, rax
+    jz .error
 
-    ; Concatenate result with current->hash
-    mov rsi, r8           ; Pass current->hash as second argument
-    mov rdi, rbx          ; Pass result as first argument
-    call str_concat       ; Call str_concat(result, current->hash)
-    test rax, rax         ; Check if str_concat failed
-    jz .free_and_return_null
-    mov rbx, rax          ; Update result pointer
-
-.next_node:
-    mov rcx, [rcx]        ; Move to the next node (current = current->next)
-    jmp .loop_start       ; Repeat loop
-
-.end_concat:
-    mov rax, rbx          ; Return the result
-    pop rbp
-    ret
-
-.free_and_return_null:
-    mov rdi, rbx          ; Free the allocated result
+    mov rdi, r14
+    mov r14, rax
     call free
+
+.next:
+    mov r15, [r15]      ; current_node = current_node->next
+    jmp .loop
+
+.success:
+    mov rax, r14
+    jmp .cleanup
+
+.error:
+    mov rdi, r14
+    call free
+    xor rax, rax
+    jmp .cleanup
+
 .return_null:
-    xor rax, rax          ; Return NULL
+    xor rax, rax
+    jmp .cleanup
+
+.cleanup:
+    pop r15
+    pop r14
+    pop r13
+    pop r12
+    pop rbx
+    add rsp, 16
     pop rbp
     ret
-
-strlen_asm:
-    push rbp
-    mov rbp, rsp
-
-    mov rax, rdi        ; rdi contains the pointer to the string
-    xor rcx, rcx        ; rcx will count the length
-
-strlen_loop:
-    cmp byte [rax], 0   ; Check if the current byte is null
-    je strlen_done      ; If null, we're done
-    inc rax             ; Move to the next character
-    inc rcx             ; Increment the length counter
-    jmp strlen_loop     ; Repeat the loop
-
-strlen_done:
-    mov rax, rcx        ; Return the length in rax
-    pop rbp
-    ret
-
-strcpy_asm:
-    push rbp
-    mov rbp, rsp
-
-    mov rax, rdi        ; Save the destination pointer to return it
-
-strcpy_loop:
-    mov bl, byte [rsi]  ; Load the current byte from the source
-    mov byte [rdi], bl  ; Copy the byte to the destination
-    test bl, bl         ; Check if the byte is null
-    je strcpy_done      ; If null, we're done
-    inc rsi             ; Move to the next byte in the source
-    inc rdi             ; Move to the next byte in the destination
-    jmp strcpy_loop     ; Repeat the loop
-
-strcpy_done:
-    pop rbp
-    ret
-
