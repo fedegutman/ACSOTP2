@@ -1,7 +1,14 @@
 ; /** defines bool y puntero **/
 %define NULL 0
-%define TRUE 1
-%define FALSE 0
+
+%define LIST_FIRST 0
+%define LIST_LAST 8
+%define LIST_SIZE 16 
+%define NODE_NEXT 0
+%define NODE_PREVIOUS 8
+%define NODE_TYPE 16
+%define NODE_HASH 24
+%define NODE_SIZE 32 
 
 section .data
 
@@ -30,8 +37,8 @@ string_proc_list_create_asm:
     je .return
     
     ; inicializo la lista vaica
-    mov qword [rax], NULL ; first = NULL
-    mov qword [rax + 8], NULL ; last = NULL
+    mov qword [rax + LIST_FIRST], NULL ; first = NULL
+    mov qword [rax + LIST_LAST], NULL ; last = NULL
 
 .return:
     ; deshago la pila
@@ -54,10 +61,10 @@ string_proc_node_create_asm:
     je .return
 
     ; inicializo el nodo
-    mov qword [rax], NULL ; next
-    mov qword [rax + 8], NULL ; previous
-    mov byte [rax + 16], r12b ; type
-    mov qword [rax + 24], r13 ; hash
+    mov qword [rax + NODE_NEXT], NULL ; next
+    mov qword [rax + + NODE_PREVIOUS], NULL ; previous
+    mov byte [rax + NODE_TYPE], r12b ; type
+    mov qword [rax + NODE_HASH], r13 ; hash
 
 .return:
     pop r13
@@ -95,15 +102,15 @@ string_proc_list_add_node_asm:
     je .empty_list
 
     ; ii. lista no vacia
-    mov rcx, [rbx + 8] 
-    mov [r14 + 8], rcx
-    mov [rcx], r14
-    mov [rbx + 8], r14
+    mov rcx, [rbx + LIST_LAST] 
+    mov [r14 + NODE_PREVIOUS], rcx
+    mov [rcx + NODE_NEXT], r14
+    mov [rbx + LIST_LAST], r14
     jmp .return ; ver de sacarlo
 
 .empty_list:
-    mov [rbx], r14
-    mov [rbx + 8], r14
+    mov [rbx + LIST_FIRST], r14
+    mov [rbx + LIST_LAST], r14
 
 .return:
     pop r14
@@ -139,13 +146,13 @@ string_proc_list_concat_asm:
     je .return
 
     ; verificar tipo
-    movzx eax, byte [r15+16] ; type
+    movzx eax, byte [r15 + NODE_TYPE] ; type
     cmp al, r12b
     jne .next
     
     ; Concatenar
     mov rdi, r14 ; resultado actual
-    mov rsi, [r15 + 24]; hash
+    mov rsi, [r15 + NODE_HASH]; hash
     call str_concat
     cmp rax, NULL
     je .concat_error
