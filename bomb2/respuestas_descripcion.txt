@@ -9,18 +9,18 @@ MAIL: FGUTMAN@UDESA.EDU.AR
 
 FASE 1: Cada uno es como Dios le hizo, y aun peor muchas veces.
 
-En la fase 1 el programa compara la entrada del usuario con un string que esta guardado en memoria. Esta comparación se hace con la funcion <strings_not_equal>. Si los strings no son iguales el programa llama a <explode_bomb>. Cuando el string es diferente al esperado se ejecuta explode_bomb. El string con el que se compara se encuentra en la dirección de memoria 0x4c9a58. Hago 
+En la fase 1 el programa compara la entrada con un string que esta guardado en memoria. Esta comparación se hace con la funcion <strings_not_equal>. Si los strings no son iguales el programa llama a <explode_bomb>. Cuando el string es diferente al esperado se ejecuta explode_bomb. El string con el que se compara se encuentra en la dirección de memoria 0x4c9a58. Hice 
 >>> x/s 0x4c9a58
 0x4c9a58:	"Cada uno es como Dios le hizo, y aun peor muchas veces."
-y obtengo el string. al poner esto como entrada el programa no detecta ninguna diferencia y avanza a la siguiente fase.
+y obtuve el string. Al poner esto como entrada el programa no detecta ninguna diferencia y avanza a la siguiente fase.
 
 ------------------------------------------------------------------------------------------------
 
 FASE 2: 1 -3 -2
 
-En la fase 2, hacemos disas phase_2 para inspeccionar el codigo. Vemos que aceptan tres entradas, se convierten a numero usando <strtoq> y se guardan en rbp, rbx y r12. A continuación, se realiza una operación bit a bit -> se calcula la siguiente cuenta (rbx ^ rbp) >> 1 == r12. Si esto no se cumple la bomba explota. Después de pasar esa comparación, se llama a la función misterio con el tercer número como argumento. Haciendo disas de misterio, se ve que si el valor es mayor o igual a cero la bomba explota. Por lo tanto, este número debe ser estrictamente negativo.
+En la fase 2, hice disas phase_2 para inspeccionar el codigo. Veo que acepta tres entradas, las cuales se convierten a numero usando <strtoq> y se guardan en rbp, rbx y r12. A continuación, se realiza una cuenta bit a bit -> (rbx ^ rbp) >> 1 == r12. Si esto no se cumple la bomba explota. Después de pasar esa comparación, se llama a la función misterio con el tercer número como argumento. Haciendo disas de misterio, vi que si el valor es mayor o igual a cero la bomba explota. Por lo tanto, este numero tiene que ser negativo.
 
-Yo trate con -1 -3 -2:
+Yo trate con 1 -3 -2:
 
 1^-3 = -4
 -4>>1 = -2
@@ -33,7 +33,7 @@ Otra posible entrada es -1 0 -1.
 
 FASE 3: aboquillar 10692
 
-En la fase 3 el programa toma como entrada una palabra y un número. esto lo vemos al hacer
+En la fase 3 el programa toma como entrada una palabra y un número. Esto lo vemos al hacer
 >>> x/s 0x4c7099
 0x4c7099:	"%s %d"
 
@@ -74,8 +74,7 @@ o explota la bomba
 
 Despues hay un loop suma 6 valores del array accedidos con indices [char & 0xf] (0xf = 15) (es como un mod 15). Eso se usa como indice en el array.0 y se van sumando esos valores. Si el resultado de esa suma es distinto de 0x2C = 44 decimal, explota la bomba.
 
-Para resolver la tabla se penso una combinacion de 6 indices entre 0 y 15 cuyos valores de la lista sumaran 44. Una vez encontrados, elegi caracters ASCII que al aplicarles la mascara me dieran esos indices. De esta manera cree la contrasen1a !"#$* (espacio al final) que al ser procesada por la función cumple con la condición esperada y desactiva la bomba.
+Para resolver la tabla pense en una combinacion de 6 indices entre 0 y 15 cuyos valores de la lista sumaran 44. Una vez encontrados, elegi caracters ASCII que al aplicarles la mascara me dieran esos indices. De esta manera cree la contrasen1a !"#$* (con un espacio al final) que al ser procesada por la función cumple con la condición esperada y desactiva la bomba.
 
 [ingrese !"#$* (con un espacio al final) ya que al hacer ord(caracter) & 0xf consigo los sigueintes indices [0, 1, 2, 3, 4, 10]
 y al sumar los valores a los que corresponden [2, 13, 7, 14, 5, 3] llego a 44.]
-
