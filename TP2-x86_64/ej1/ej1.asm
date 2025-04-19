@@ -85,7 +85,6 @@ string_proc_list_add_node_asm:
     movzx rdi, r12b
     mov rsi, r13
     call string_proc_node_create_asm
-
     cmp rax, NULL
     je .return
 
@@ -124,25 +123,24 @@ string_proc_list_concat_asm:
     push r13
     push r14
     push r15
-    mov rbx, rdi ; esto contiene la lista
-    mov r12b, sil ; esto el type
-    mov r13, rdx ; esto el hash 
+    mov rbx, rdi ; lista
+    mov r12b, sil ; type
+    mov r13, rdx ; hash
     mov rdi, r13
     call strdup
-    mov r14, rax ; result
     cmp r14, NULL
     je .return
-
-    mov r15, [rbx] ; current
+    mov r14, rax
+    mov r15, [rbx + LIST_FIRST] ; curr
 
 .L:
     cmp r15, NULL
     je .return
 
-    movzx eax, byte [r15 + NODE_TYPE] ; type
+    movzx eax, byte [r15 + NODE_TYPE]
     cmp al, r12b
-    jne .next
-    
+    jne .skip
+
     mov rdi, r14
     mov rsi, [r15 + NODE_HASH]
     call str_concat
@@ -152,16 +150,16 @@ string_proc_list_concat_asm:
     mov rdi, r14
     mov r14, rax
     call free
-    
-.next:
-    mov r15, [r15 + NODE_NEXT]; current
-    jmp .L
-    
+
+.skip:
+    mov r15, [r15 + NODE_NEXT]
+    jmp .loop
+
 .err:
     mov rdi, r14
     call free
-    xor r14, r14 ; al hacer xor entre dos registros se borra el contenido
-    
+    xor r14, r14
+
 .return:
     mov rax, r14
     pop r15
