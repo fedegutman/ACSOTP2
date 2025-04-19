@@ -9,33 +9,35 @@ MAIL: FGUTMAN@UDESA.EDU.AR
 
 FASE 1: Cada uno es como Dios le hizo, y aun peor muchas veces.
 
-En la fase 1 el programa compara la entrada del usuario con un string que esta guardado en memoria. Esta comparación se hace con la funsion <strings_not_equal>. Si los strings no son iguales el programa llama a <explode_bomb>.
-
-La función compara las cadenas en dos fases: primero, verifica si tienen la misma longitud; si no, las considera diferentes. Luego, si las longitudes coinciden, compara cada carácter de las dos cadenas. Si alguna diferencia es encontrada, retorna 1; si no, retorna 0.
-
-El análisis del código en GDB reveló que, cuando la cadena ingresada es diferente a la esperada, la función explode_bomb se ejecuta, causando que la bomba explote. La cadena esperada se encuentra en la dirección de memoria 0x4c9a58, y al examinar su contenido con el comando x/s 0x4c9a58, descubrimos que la cadena correcta es: "Cada uno es como Dios le hizo, y aun peor muchas veces". Al proporcionar esta cadena como entrada, el programa no detecta ninguna discrepancia y, por lo tanto, avanza a la siguiente fase sin que la bomba explote.
-
+En la fase 1 el programa compara la entrada del usuario con un string que esta guardado en memoria. Esta comparación se hace con la funcion <strings_not_equal>. Si los strings no son iguales el programa llama a <explode_bomb>. Cuando el string es diferente al esperado se ejecuta explode_bomb. El string con el que se compara se encuentra en la dirección de memoria 0x4c9a58. Hago 
 >>> x/s 0x4c9a58
 0x4c9a58:	"Cada uno es como Dios le hizo, y aun peor muchas veces."
+y obtengo el string. al poner esto como entrada el programa no detecta ninguna diferencia y avanza a la siguiente fase.
 
 ------------------------------------------------------------------------------------------------
-
 
 FASE 2: 1 -3 -2
 
-En la fase 2 del desafío, la clave para evitar que la bomba explote se encuentra en cumplir la condición (rbx ^ rbp) >> 1 == r12. En el código, rbx es igual a -3, rbp es igual a 1 y r12 es igual a -2. Primero, calculamos el valor de rbx ^ rbp, que da -4. Luego, aplicamos un desplazamiento aritmético a la derecha (>> 1), lo que resulta en -2, que coincide con el valor de r12. Al cumplir esta condición, la bomba no explota y la función misterio no se activa, permitiendo desactivar la fase 2.
+En la fase 2, hacemos disas phase_2 para inspeccionar el codigo. Vemos que aceptan tres entradas, se convierten a numero usando <strtoq> y se guardan en rbp, rbx y r12. A continuación, se realiza una operación bit a bit -> se calcula la siguiente cuenta (rbx ^ rbp) >> 1 == r12. Si esto no se cumple la bomba explota. Después de pasar esa comparación, se llama a la función misterio con el tercer número como argumento. Haciendo disas de misterio, se ve que si el valor es mayor o igual a cero la bomba explota. Por lo tanto, este número debe ser estrictamente negativo.
 
-Para evitar que la bomba explote en la fase 2, es esencial cumplir con la condición (rbx ^ rbp) >> 1 == r12. La función misterio juega un papel clave en este proceso, ya que solo se llama si esta condición se cumple. La función en sí misma verifica si el valor de edi es negativo. Si es negativo, no hace nada; si es cero o positivo, llama a la función explode_bomb, causando que la bomba explote. Entonces, el objetivo es manipular los valores de los registros rbx, rbp y r12 para que, al calcular (rbx ^ rbp) >> 1, el resultado sea igual a r12. En este caso, tras analizar los valores actuales de los registros (rbx = -3, rbp = 1, r12 = -2), pude determinar que si esta condición se cumple, la bomba no explotará, ya que la función misterio no activará explode_bomb.
+Yo trate con -1 -3 -2:
 
-hago disas phase_2 para inspeccionar
-hago disas misterio para inspeccionar la funcion misterio
+1^-3 = -4
+-4>>1 = -2
 
-La función misterio simplemente verifica si el valor en edi (que probablemente sea el primer valor de entrada) es negativo o no:
+(-2 es negativo)
+
+Otra posible entrada es -1 0 -1.
 
 ------------------------------------------------------------------------------------------------
 
-FASE 3: 
+FASE 3: aboquillar 10692
 
+En la fase 3 el programa toma como entrada una palabra y un número. esto lo vemos al hacer
+>>> x/s 0x4c7099
+0x4c7099:	"%s %d"
+
+Hice disas de readlines e inspeccione un poco el codigo
 disas readlines
 >>> x/s 0x4c7723
 0x4c7723:	"r"
@@ -43,31 +45,37 @@ disas readlines
 0x4c708c:	"palabras.txt"
 >>> x/s 0x4c707b
 0x4c707b:	"Falta el archivo palabras.txt"
->>> x/s 0x4c7099
-0x4c7099:	"%s %d"
 
-pareceria que readlines lee palabras.txt
-la entrada debe ser un string y un numero
+y pareceria que el programa lee (r) el archivo palabras.txt
 
-hay una funcion cuenta
-lo qeu retorna tieen que ser mayor a 0x270f (9999) xq sino salta a explode_bomb
+Hice disas en la funcion cuenta y vi que que hace alguna cuenta con la palabra ingresada y devuelve un valor numerico. Puse un breakpoint justo despues de que se ejecute cuenta y puse como entrada la palabra 'aboquillar'. Una vez ejecutada cuenta, la funcion devolvio el valor 10692.
 
-cuando le paso 
-Para resolver el problema, rastreamos el valor de retorno de la función cuenta, el cual se almacena en el registro eax. Al hacer un breakpoint en el código después de ejecutar la función cuenta, observamos que el valor de eax es 10692. Este valor es el resultado de una operación dentro de la función cuenta, que parece estar relacionada con algún tipo de cálculo o procesamiento de datos, como la conversión de una cadena a un número o el uso de algún valor previamente almacenado. Al rastrear el flujo de ejecución, descubrimos que este valor se compara más tarde con el umbral 0x270f (10095 en decimal). Si el valor de eax es mayor que este umbral, el programa toma una ruta de ejecución específica, lo que determina si la bomba explota o no. Así, al manipular las entradas y asegurar que el valor retornado por cuenta no exceda este umbral, podemos evitar que la bomba explote. Este análisis requiere una comprensión de cómo las funciones se llaman, cómo se manipulan los registros, y cómo las comparaciones en el código determinan el flujo de control del programa.
+>>> print $eax
+$1 = 10692
 
-Entrada del usuario: Ingresaste la palabra "aboquillar" y un número mayor a 9999. El programa toma la entrada a través de la función readlin, lo que permite que el número y la cadena sean leídos.
-Función cuenta:
-Después de la entrada, se llama a la función cuenta. Esta función probablemente hace alguna operación con los datos de entrada, como convertir la cadena "aboquillar" a un número o hacer cálculos basados en la cadena y el número que proporcionaste.
-El resultado de la función cuenta se almacena en el registro eax. Según tus observaciones, el valor de eax después de ejecutar cuenta fue 10692.
-Condición en phase_3:
-El siguiente paso en la función phase_3 es comparar el valor en eax con el umbral 0x270f (10095 en decimal).
-La instrucción cmp eax, 0x270f compara el valor de eax (10692) con 10095. Como 10692 > 10095, el flujo de ejecución se desvía a la parte del código después de este cmp debido a la instrucción jle, que no se ejecuta (es decir, salta si eax es menor o igual que el valor comparado).
-
-En la fase 3, el programa tomaba como entrada una palabra y un número. La palabra se convertía a un puntero (probablemente a una cadena de caracteres), y el número debía ser mayor a 9999. La función cuenta, que era llamada con esa palabra y los extremos izquierdo y derecho de un arreglo, aplicaba un algoritmo de búsqueda binaria recursiva sobre un arreglo de punteros a funciones. En cada paso, tomaba el índice medio entre los extremos, aplicaba una función en ese punto y observaba si el valor devuelto era negativo, cero o positivo. Si era cero, el algoritmo terminaba. Si no, ajustaba los extremos de búsqueda y seguía la recursión. La clave fue notar que el resultado de la función aplicada (almacenado en eax) debía ser igual a cero para cortar correctamente la búsqueda sin hacer explotar la bomba. Usamos GDB para encontrar qué valor de eax daba cero en una posición específica del arreglo, y luego averiguamos qué combinación de palabra y número la producía. Así dimos con la entrada correcta para pasar la fase.
+Por lo que pude entender cuenta hace una busqueda binaria sobre palabras.txt y devuelve algun tipo de metrica (como llamadas recursivas, iteraciones, etc.). Tambien vi que el programa hace una comparación del numero que retorna la funcon contra el valor hexadecimal 0x270f (9999 en decimal), donde el valor retornado tiene que ser mayor a 9999, sino explota la bomba. Despues se compara el numero ingresado por el usuario con lo que retorno cuenta, y si son iguales se desactiva la fase 3. 
 
 ------------------------------------------------------------------------------------------------
 
 FASE 4: !"#$* 
 
-En la fase 4, el programa espera una cadena de exactamente 6 caracteres. Primero verifica que la longitud sea 6, y luego recorre cada uno de esos caracteres. A cada carácter le aplica una máscara de bits (& 0xf) para quedarse solo con los últimos 4 bits, es decir, con un valor entre 0 y 15. Ese valor se usa como índice en una tabla de 16 enteros (array.0), y se van sumando los valores obtenidos en cada iteración. La bomba explota si la suma total no da exactamente 44 (0x2C en hexadecimal). Para resolverla, examinamos la tabla y buscamos una combinación de 6 índices entre 0 y 15 cuyos valores sumaran 44. Una vez encontrados esos índices, elegimos caracteres ASCII que, al aplicarles & 0xf, dieran exactamente esos valores. Así construimos una cadena válida como !"#$* (espacio al final), que al ser procesada por la función cumple con la condición esperada y desactiva la bomba.
+En la fase 4, vi que habia un array e hice lo siguiente 
+
+>>> x/16dw 0x4cde20
+0x4cde20 <array.0>:	2	13	7	14
+0x4cde30 <array.0+16>:	5	10	6	15
+0x4cde40 <array.0+32>:	1	12	3	4
+0x4cde50 <array.0+48>:	11	8	16	9
+
+La funcion phase_4 debe recibir una entrada de exactamente 6 caracteres
+cmp    eax,0x6 
+jne    explode_bomb
+o explota la bomba
+
+Despues hay un loop suma 6 valores del array accedidos con indices [char & 0xf] (0xf = 15) (es como un mod 15). Eso se usa como indice en el array.0 y se van sumando esos valores. Si el resultado de esa suma es distinto de 0x2C = 44 decimal, explota la bomba.
+
+Para resolver la tabla se penso una combinacion de 6 indices entre 0 y 15 cuyos valores de la lista sumaran 44. Una vez encontrados, elegi caracters ASCII que al aplicarles la mascara me dieran esos indices. De esta manera cree la contrasen1a !"#$* (espacio al final) que al ser procesada por la función cumple con la condición esperada y desactiva la bomba.
+
+[ingrese !"#$* (con un espacio al final) ya que al hacer ord(caracter) & 0xf consigo los sigueintes indices [0, 1, 2, 3, 4, 10]
+y al sumar los valores a los que corresponden [2, 13, 7, 14, 5, 3] llego a 44.]
 
