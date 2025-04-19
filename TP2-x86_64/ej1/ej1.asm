@@ -160,7 +160,7 @@ string_proc_list_concat_asm:
     call free
     
 .next:
-    mov r15, [r15]; current
+    mov r15, [r15 + NODE_NEXT]; current
     jmp .L
     
 .concat_error:

@@ -18,6 +18,9 @@ El análisis del código en GDB reveló que, cuando la cadena ingresada es difer
 >>> x/s 0x4c9a58
 0x4c9a58:	"Cada uno es como Dios le hizo, y aun peor muchas veces."
 
+------------------------------------------------------------------------------------------------
+
+
 FASE 2: 1 -3 -2
 
 En la fase 2 del desafío, la clave para evitar que la bomba explote se encuentra en cumplir la condición (rbx ^ rbp) >> 1 == r12. En el código, rbx es igual a -3, rbp es igual a 1 y r12 es igual a -2. Primero, calculamos el valor de rbx ^ rbp, que da -4. Luego, aplicamos un desplazamiento aritmético a la derecha (>> 1), lo que resulta en -2, que coincide con el valor de r12. Al cumplir esta condición, la bomba no explota y la función misterio no se activa, permitiendo desactivar la fase 2.
@@ -31,7 +34,7 @@ La función misterio simplemente verifica si el valor en edi (que probablemente 
 
 ------------------------------------------------------------------------------------------------
 
-FASE 3: aboquillar 10692
+FASE 3: 
 
 disas readlines
 >>> x/s 0x4c7723
@@ -59,3 +62,12 @@ El resultado de la función cuenta se almacena en el registro eax. Según tus ob
 Condición en phase_3:
 El siguiente paso en la función phase_3 es comparar el valor en eax con el umbral 0x270f (10095 en decimal).
 La instrucción cmp eax, 0x270f compara el valor de eax (10692) con 10095. Como 10692 > 10095, el flujo de ejecución se desvía a la parte del código después de este cmp debido a la instrucción jle, que no se ejecuta (es decir, salta si eax es menor o igual que el valor comparado).
+
+En la fase 3, el programa tomaba como entrada una palabra y un número. La palabra se convertía a un puntero (probablemente a una cadena de caracteres), y el número debía ser mayor a 9999. La función cuenta, que era llamada con esa palabra y los extremos izquierdo y derecho de un arreglo, aplicaba un algoritmo de búsqueda binaria recursiva sobre un arreglo de punteros a funciones. En cada paso, tomaba el índice medio entre los extremos, aplicaba una función en ese punto y observaba si el valor devuelto era negativo, cero o positivo. Si era cero, el algoritmo terminaba. Si no, ajustaba los extremos de búsqueda y seguía la recursión. La clave fue notar que el resultado de la función aplicada (almacenado en eax) debía ser igual a cero para cortar correctamente la búsqueda sin hacer explotar la bomba. Usamos GDB para encontrar qué valor de eax daba cero en una posición específica del arreglo, y luego averiguamos qué combinación de palabra y número la producía. Así dimos con la entrada correcta para pasar la fase.
+
+------------------------------------------------------------------------------------------------
+
+FASE 4: !"#$* 
+
+En la fase 4, el programa espera una cadena de exactamente 6 caracteres. Primero verifica que la longitud sea 6, y luego recorre cada uno de esos caracteres. A cada carácter le aplica una máscara de bits (& 0xf) para quedarse solo con los últimos 4 bits, es decir, con un valor entre 0 y 15. Ese valor se usa como índice en una tabla de 16 enteros (array.0), y se van sumando los valores obtenidos en cada iteración. La bomba explota si la suma total no da exactamente 44 (0x2C en hexadecimal). Para resolverla, examinamos la tabla y buscamos una combinación de 6 índices entre 0 y 15 cuyos valores sumaran 44. Una vez encontrados esos índices, elegimos caracteres ASCII que, al aplicarles & 0xf, dieran exactamente esos valores. Así construimos una cadena válida como !"#$* (espacio al final), que al ser procesada por la función cumple con la condición esperada y desactiva la bomba.
+
