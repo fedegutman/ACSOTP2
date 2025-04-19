@@ -30,9 +30,8 @@ string_proc_list_create_asm:
     push rbp
     mov rbp, rsp
 
-    mov rdi, 16 ; tamaño de la lista
+    mov rdi, LIST_SIZE
     call malloc
-
     cmp rax, NULL ; si malloc falla -> return
     je .return
     
@@ -50,19 +49,17 @@ string_proc_node_create_asm:
     mov rbp, rsp
     push r12
     push r13
-
     mov r12b, dil ; type
     mov r13, rsi ; hash
 
-    mov rdi, 32 ; tamaño del nodo
+    mov rdi, NODE_SIZE
     call malloc
-
     cmp rax, NULL
     je .return
 
     ; inicializo el nodo
     mov qword [rax + NODE_NEXT], NULL ; next
-    mov qword [rax + + NODE_PREVIOUS], NULL ; previous
+    mov qword [rax + NODE_PREVIOUS], NULL ; previous
     mov byte [rax + NODE_TYPE], r12b ; type
     mov qword [rax + NODE_HASH], r13 ; hash
 
