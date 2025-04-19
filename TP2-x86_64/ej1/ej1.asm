@@ -153,7 +153,7 @@ string_proc_list_concat_asm:
 
 .skip:
     mov r15, [r15 + NODE_NEXT]
-    jmp .loop
+    jmp .L
 
 .err:
     mov rdi, r14
