@@ -132,8 +132,9 @@ string_proc_list_concat_asm:
     je .return
     mov r14, rax
     mov r15, [rbx + LIST_FIRST] ; curr
+    mov rdi, r14
 
-.L:
+.process_nodes:
     cmp r15, NULL
     je .return
 
@@ -146,14 +147,13 @@ string_proc_list_concat_asm:
     call str_concat
     cmp rax, NULL
     je .err
-    
-    mov rdi, r14
+
     mov r14, rax
     call free
 
 .skip:
     mov r15, [r15 + NODE_NEXT]
-    jmp .L
+    jmp .process_nodes
 
 .err:
     mov rdi, r14
