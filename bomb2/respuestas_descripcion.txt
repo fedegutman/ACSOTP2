@@ -1,14 +1,90 @@
 FASE 1: Cada uno es como Dios le hizo, y aun peor muchas veces.
 
-En fase 1 hay una función <strings_not_equal> la cual compara 2 strings, el input y uno que esta guardado en un registro. Si estos no son iguales, el programa llama a <explode_bomb>. x/s 0x4c9a58
+En fase 1 hay una función <strings_not_equal> la cual compara 2 strings, el input y uno que esta guardado en un registro. Si estos no son iguales, el programa llama a <explode_bomb>. Hago disas strings_not_eqqual para inspeccionar la función y veo que los registros rbx y rbp apuntan a los strings que se quieren comparar. ??
 
+La función compara las cadenas en dos fases: primero, verifica si tienen la misma longitud; si no, las considera diferentes. Luego, si las longitudes coinciden, compara cada carácter de las dos cadenas. Si alguna diferencia es encontrada, retorna 1; si no, retorna 0.
+Por lo tanto, la comparación en este caso usa las direcciones rsi y rdi, lo que confirma que se está comparando la cadena en rsi (que es la que acabas de ver) con otra cadena en rdi. La cadena en rdi parece ser "Cada uno es como Dios le hizo, y aun peor muchas veces.", y como las cadenas no son iguales, el bomb explota.
 
-
-
+>>> x/s 0x4c9a58
+0x4c9a58:	"Cada uno es como Dios le hizo, y aun peor muchas veces."
 
 
 <strings_not_equal> - This function name suggests that it is going to compare two strings. If strings are not equal, this program is calling <explode_bomb>
 
 
 FASE 2: 1 -3 -2
+
+hago disas phase_2 para inspeccionar
+hago disas misterio para inspeccionar la funcion misterio
+
+La función misterio simplemente verifica si el valor en edi (que probablemente sea el primer valor de entrada) es negativo o no:
+
+Si es negativo, la función retorna sin hacer nada, lo cual no provoca que la bomba explote.
+Si es no negativo (positivo o cero), la bomba explota.
+
+La clave de la fase 2 parece estar en asegurarse de que la entrada que se pasa a la función misterio sea negativa. Si el valor que se pasa a edi es negativo, la bomba no explotará. Esto debe ocurrir después de las conversiones de cadenas a números que vimos en el código anterior, por lo que es importante que la entrada numérica que se proporcione cumpla con este criterio.
+
+Probablemente, necesitarás manipular las entradas para que, en algún momento, el valor de edi sea negativo. Esto es algo que puedes experimentar ajustando las cadenas de entrada en función de las conversiones de strtoq y los cálculos anteriores.
+
+Primero se llama a strtoq para convertir una cadena en un número:
+Esto ocurre tres veces en el código (en las líneas con las llamadas a strtoq).
+El código convierte tres cadenas en números. Después, esos números se almacenan en las variables rbp, rbx, y r12.
+Comprobación de la condición con xor y sar:
+Se hace un cálculo con los valores almacenados en rbp, rbx, y r12. El valor de ebx se calcula como:
+
+xor ebx, ebp
+sar ebx, 1
+
+Esto significa que el valor en ebx es el resultado de una operación XOR entre los valores en rbp (que contiene uno de los números convertidos) y rbx (que contiene otro número convertido), seguido de un desplazamiento aritmético a la derecha (división por 2).
+Comparación entre el valor de ebx y eax:
+Después de realizar los cálculos, se compara el valor de ebx con el valor de eax (que contiene el tercer número convertido):
+cmp ebx, eax
+Si los valores no son iguales, la bomba explota (jne 0x401eb7 <phase_2+149>).
+
+Si los valores son iguales, la función misterio se llama. La entrada a misterio debe ser negativa para que no explote la bomba.
+Estrategia para obtener la contraseña:
+Proporciona tres números (como cadenas) que satisfagan la condición:
+Los tres números que se convierten de las cadenas deben cumplir con la condición:
+(rbx ^ rbp) >> 1 == r12
+Es decir, después de hacer la operación XOR entre rbx y rbp, dividirlo por 2, el resultado debe ser igual a r12.
+
+   0x0000000000401e5f <+61>:	mov    rdi,rbp
+   0x0000000000401e62 <+64>:	call   0x406850 <strtoq>
+
+      0x0000000000401e74 <+82>:	mov    rdi,rbx
+   0x0000000000401e77 <+85>:	call   0x406850 <strtoq>
+
+      0x0000000000401e89 <+103>:	mov    rdi,r12
+   0x0000000000401e8c <+106>:	call   0x406850 <strtoq>
+
+------------------------------------------------------------------------------------------------
+
+La función misterio se encarga de verificar si el valor en el registro edi es negativo o no. Si el valor es negativo, la función retorna sin hacer nada, lo que evita que la bomba explote. Sin embargo, si el valor es no negativo (es decir, positivo o cero), la bomba explota. Por lo tanto, la clave para resolver la Fase 2 es asegurarse de que el valor que se pasa a edi sea negativo para evitar que la bomba explote.
+
+En la función phase_2, se realizan tres llamadas a strtoq para convertir tres cadenas de texto en números:
+
+Primer entrada: Se guarda en el registro rbp.
+Segunda entrada: Se guarda en el registro rbx.
+Tercer entrada: Se guarda en el registro r12.
+Estas conversiones son importantes porque los valores que se almacenan en estos registros se utilizarán en operaciones posteriores para verificar si la bomba debe explotar o no.
+
+Después de convertir las cadenas a números, se realizan operaciones con los valores almacenados en los registros rbp, rbx y r12. En particular, el valor en ebx se calcula con la operación XOR entre rbx y rbp, seguido de un desplazamiento aritmético a la derecha (SAR):
+
+ebx = (rbx ^ rbp) >> 1 Este valor calculado en ebx se compara luego con el valor en eax (que es el valor de r12):
+Si ebx != eax, la bomba explota.
+Si ebx == eax, se llama a la función misterio.
+
+La condición esencial para que la bomba no explote es que se cumpla la siguiente igualdad:
+
+(rbx ^ rbp) >> 1 == r12 El objetivo es proporcionar tres números que, al ser convertidos y manipulados en la función, hagan que esta condición se cumpla.
+
+Paso 1: Debes elegir dos números para las primeras entradas (rbp y rbx). Calcula el resultado de rbx ^ rbp, y luego haz un desplazamiento a la derecha de ese valor.
+Paso 2: El resultado de este cálculo debe coincidir con el valor almacenado en r12 (la tercera entrada).
+Paso 3: Asegúrate de que la entrada final (r12) cumpla con esta condición, es decir, que el valor de r12 sea igual al resultado del cálculo anterior.
+
+Puedes resolver esto de manera matemática, eligiendo valores para rbp, rbx y r12 que cumplan con la condición mencionada. Alternativamente, puedes experimentar con diferentes valores hasta encontrar una combinación que funcione. Una estrategia es probar con números pequeños o números que tengan propiedades especiales, como potencias de 2, ya que las operaciones XOR suelen producir resultados predecibles en estos casos.
+
+Si te gustaría probar con algunos valores específicos o necesitas más detalles sobre cómo calcular los valores correctos para las entradas, no dudes en preguntar.
+
+
 FASE 3: aboquillar 10692

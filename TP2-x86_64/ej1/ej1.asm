@@ -106,7 +106,7 @@ string_proc_list_add_node_asm:
     mov [r14 + NODE_PREVIOUS], rcx
     mov [rcx + NODE_NEXT], r14
     mov [rbx + LIST_LAST], r14
-    jmp .return ; ver de sacarlo
+    jmp .return
 
 .empty_list:
     mov [rbx + LIST_FIRST], r14
@@ -141,30 +141,27 @@ string_proc_list_concat_asm:
     
     mov r15, [rbx] ; current
 
-.loop:
+.L:
     cmp r15, NULL
     je .return
 
-    ; verificar tipo
     movzx eax, byte [r15 + NODE_TYPE] ; type
     cmp al, r12b
     jne .next
     
-    ; Concatenar
-    mov rdi, r14 ; resultado actual
-    mov rsi, [r15 + NODE_HASH]; hash
+    mov rdi, r14
+    mov rsi, [r15 + NODE_HASH]
     call str_concat
     cmp rax, NULL
     je .concat_error
     
-    ; libero el string anterior
     mov rdi, r14
-    mov r14, rax ; result
+    mov r14, rax
     call free
     
 .next:
     mov r15, [r15]; current
-    jmp .loop
+    jmp .L
     
 .concat_error:
     mov rdi, r14
